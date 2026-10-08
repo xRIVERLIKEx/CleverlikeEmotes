@@ -246,6 +246,11 @@ details.emoji-pick summary { cursor: pointer; font-size: 0.82rem; font-weight: 7
 .faces { grid-template-columns: repeat(8, 34px); }
 @media (max-width: 1500px) { .faces { grid-template-columns: repeat(4, 34px); } }
 
+.field-error, .field .field-error { color: var(--bad); font-size: 0.8rem; font-weight: 700; }
+input[aria-invalid="true"] { border-color: var(--bad); }
+.skin-note { color: var(--warn); font-size: 0.8rem; font-weight: 700; }
+.dlg-msg { margin: 0 20px; padding: 8px 12px; border-radius: 6px; background: var(--bad-soft); color: var(--ink); border-left: 3px solid var(--bad); font-size: 0.86rem; }
+
 /* ---------- item icon ---------- */
 .icon-row { display: flex; gap: 12px; align-items: center; }
 .icon-meta { display: grid; gap: 2px; min-width: 0; }
@@ -386,6 +391,7 @@ input[type="color"] { width: 44px; height: 32px; border: 1px solid var(--line); 
       <button class="btn" type="button" id="skin-upload">Use my skin…</button>
       <button class="btn ghost" type="button" id="skin-reset" hidden>Default skin</button>
       <input type="file" id="skin-file" accept="image/png" hidden>
+      <small class="skin-note" id="skin-note" hidden>Menu icons use the default skin with this one.</small>
     </div>
   </section>
 
@@ -455,6 +461,7 @@ input[type="color"] { width: 44px; height: 32px; border: 1px solid var(--line); 
       </div>
     </div>
   </div>
+  <p class="dlg-msg" id="icon-msg" role="alert" hidden></p>
   <footer class="dlg-foot">
     <button class="btn" type="button" id="icon-cancel">Cancel</button>
     <button class="btn primary" type="button" id="icon-save">Save icon</button>
@@ -771,6 +778,382 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
 })(typeof window !== "undefined" ? window : globalThis);
 
 
+/* Cleverlike Emote Tool — content checks for student work
+ * Text: blocks profanity, slurs, violence, sexual and drug terms, self-harm phrases and contact info in names.
+ * Images: rejects photos and non-skin images as skins, flags unclothed-looking skins, rejects photo
+ * or skin-tone-heavy icon imports, and flags hand-drawn icons that are mostly skin tones.
+ * Word lists are stored ROT13-encoded so they aren't readable at a glance in the page source.
+ * Teachers can add words with EXTRA_WORDS (plain text, whole-word matches). */
+(function (G) {
+  "use strict";
+  const EXTRA_WORDS = [];   // e.g. ["sus"]: your own additions, matched as whole words
+  // Harmless phrases that contain a blocked word; these are allowed as a whole phrase
+  const ALLOW_PHRASES = ["shooting star", "shooting stars", "dead sea", "dead end", "shot put", "big shot", "photo shot", "killer whale", "killer bees"];
+
+  const rot13 = (s) => s.replace(/[a-z]/g, (c) => String.fromCharCode(((c.charCodeAt(0) - 97 + 13) % 26) + 97));
+  const L = {"s": ["shpx", "shx", "shd", "spx", "fuvg", "phag", "ovgpu", "ovngpu", "juber", "fyhg", "avttre", "avttn", "snttbg", "sntbg", "ergneq", "qvyqb", "cbea", "encvfg", "zbyrfg", "cravf", "intvan", "obbo", "gvggvrf", "wvmm", "anmv", "uvgyre", "nffubyr", "nefrubyr", "qhzonff", "wnpxnff", "onfgneq", "gjng", "jnax", "pbpxfhpx", "qvpxurnq", "zbgures", "obyybpx", "ubeal", "ahqr", "anxrq", "kkk", "xvyylbhefrys", "fhvpvqr", "jrgonpx", "genaal", "fcnfgvp", "crqbcuvyr", "cnrqb", "uragnv", "zvys", "oybjwbo", "unaqwbo", "phzfubg", "betnfz", "rerpgvba", "grfgvpyr", "fpebghz", "pyvgbevf", "chovp", "fgevccre", "ubbxre", "cebfgvghg", "urebva", "pbpnvar", "zrgu", "jrrq", "znevwhnan", "zheqre", "znffnper", "orurnq", "qrpncvgng", "fynhtugre", "greebevf", "trabpvqr", "gbeghe", "fgenaty", "oybbqongu", "thafubg", "fubbgbhg", "frkhny", "frkgvat", "rebgvp", "srgvfu", "xvaxl", "oqfz", "yvatrevr", "cnagvrf", "avccyr", "travgny", "pbaqbz", "ivnten", "znfgheong", "frqhp", "frafhny", "cbeafgne", "baylsnaf", "guerrfbzr", "sbercynl", "fgevcpyho"], "w": ["nff", "nffrf", "nefr", "frk", "frkl", "nany", "nahf", "phz", "pbpx", "qvpx", "qvpxf", "chffl", "cevpx", "cvff", "cvffrq", "penc", "qnza", "uryy", "encr", "encrq", "encvat", "crqb", "xxx", "puvax", "fcvp", "xvxr", "qlxr", "tbbx", "pbba", "snt", "sntf", "gvgf", "gvg", "obare", "ubr", "ubrf", "gubg", "xlf", "xzf", "yrfob", "qehax", "orre", "ibqxn", "avtn", "fug", "xvyy", "xvyyf", "xvyyrq", "xvyyre", "xvyyref", "xvyyvat", "fgno", "fgnof", "fgnoorq", "fgnoovat", "fubbg", "fubbgf", "fubbgvat", "fubbgre", "fubg", "tha", "thaf", "evsyr", "evsyrf", "cvfgby", "cvfgbyf", "obzo", "obzof", "obzovat", "ahxr", "teranqr", "ohyyrg", "ohyyrgf", "jrncba", "jrncbaf", "xavsr", "xavirf", "funax", "oybbq", "oybbql", "tber", "tbel", "pbecfr", "pbecfrf", "qvr", "qvrf", "qlvat", "qrnq", "qrngu", "pubxr", "pubxvat", "abbfr", "ubfgntr", "nffnhyg", "ivbyrapr", "ivbyrag", "nohfr", "nohfrq", "fgevc", "fgevccvat", "fgevcgrnfr", "guehfg", "guehfgvat", "uhzc", "uhzcvat", "gjrex", "gjrexvat", "obbgl", "oernfg", "oernfgf", "oen", "oenf", "gubat", "gubatf", "ubeal", "frkv", "frkk", "afsj", "yrjq", "ubggvr", "sernxl", "ohggubyr", "ohz"], "a": ["fphagubecr", "avttyr", "avttyvat", "fuvgnxr", "fuvvgnxr", "pbpxgnvy", "crnpbpx", "unapbpx", "uvgpupbpx", "qvpxraf", "nffnffva", "pynffvp", "pynff", "tenff", "tynff", "onff", "cnff", "znff", "oenff", "uryyb", "furyy", "furyysvfu", "gurencvfg", "tencr", "qencr", "qbphzrag", "phphzore", "gbecrqb", "nanylfvf", "nanybt", "henahf", "crqny", "crqbzrgre", "ergneqnag", "zrgubq", "zrgubqf", "zrgunar", "fbzrguvat", "jrrxraq", "fuvugmh", "chfflpng", "fhffrk", "rffrk", "frkgnag", "frkgrg", "gvgnavp", "gvgyr", "gvgyrf", "pbafgvghgvba", "xvffvat", "onffvfg", "rzonffl", "unenff", "pbzcnff", "pbpxcvg", "pbpxngbb", "pbpxebnpu", "fpencobbx", "urebvar", "urebvarf", "gjrrq", "gjrrqyr", "fxlfpencre", "gurencvfgf", "penccyr", "fxvyy", "fxvyyf", "fxvyyrq", "fxvyyrg", "fgevcr", "fgevcrf", "fgevcrq", "oenib", "oenir", "noen", "pboen", "mroen", "nytroen", "yvoenel", "hzoeryyn", "fubgbxna", "qvrg", "ohzoyrorr", "ohzcre", "ohzcl", "uhzcgl", "puhzcl", "qnqqlybatyrtf", "fznfure", "thagure", "ortha", "thaqnz", "obzonfgvp", "obzore", "qrnqyvar", "qrnqcbby", "qvrfry", "fghqvrf", "vaqvr", "tbbqvrf", "pbbxvrf", "xvyyqrre", "oybbqubhaq", "guehfu", "fuber"]};
+  const SEVERE = L.s.map(rot13), WHOLE = new Set([...L.w.map(rot13), ...EXTRA_WORDS.map((w) => w.toLowerCase())]), ALLOW = L.a.map(rot13);
+  const collapse = (s) => s.replace(/(.)\1+/g, "$1");
+  // Multi-word phrases (self-harm, threats, sexual), matched across spaces
+  const PHRASES = ["xvyy lbhefrys", "xvyy hefrys", "xvyy lbhe frys", "xvyy he frys", "tb qvr", "xvyy zlfrys", "xvyy lbh", "xvyy h", "v jvyy xvyy", "tbaan xvyy", "fubbg hc", "oybj hc", "fyvg guebng", "fyvg lbhe guebng", "orng lbh hc", "unat lbhefrys", "qvr va n sver", "phg zlfrys", "znxr bhg", "argsyvk naq puvyy", "uvg gung", "trg anxrq", "gnxr vg bss", "oraq bire", "ba lbhe xarrf"].map(rot13);
+  const SEVERE_C = SEVERE.map(collapse);
+
+  // Look-alike characters students use to dodge filters ("1" can be i or l, so both are tried)
+  const LEET = { "0": "o", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "9": "g", "@": "a", "$": "s", "!": "i", "|": "l", "+": "t", "€": "e", "£": "l" };
+  function variants(text) {
+    const base = text.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/§./g, "");
+    const map = (s, one) => s.replace(/[0345789@$!|+€£1]/g, (c) => (c === "1" ? one : LEET[c]));
+    return [...new Set([map(base, "i"), map(base, "l")])];
+  }
+
+  /** Returns null when the text is fine, otherwise a friendly reason (never repeats the word) */
+  function checkText(text) {
+    const raw = String(text || "");
+    if (/[\w.+-]+@[\w-]+\.[a-z]{2,}/i.test(raw) || /(https?:\/\/|www\.|\.(com|net|org|edu|io|gg|tv|me|ly)\b)/i.test(raw)) return "Names can't include emails or links.";
+    if (/(\d[\s.()-]*){7,}/.test(raw)) return "Names can't include phone numbers.";
+    if (/[8b]\s*[=\-~]{2,}\s*[d>]/i.test(raw)) return "That name includes a word that isn't allowed. Please choose a different name.";
+    if (/(^|[^\d])(69|420|666)([^\d]|$)/.test(raw)) return "That name includes a word that isn't allowed. Please choose a different name.";
+    for (let v of variants(raw)) {
+      for (const ap of ALLOW_PHRASES) v = v.split(ap).join(" ");
+      const tokens = v.split(/[^a-z]+/).filter(Boolean);
+      // "f u c k" / "f.u.c.k": single letters run together into one word
+      const merged = []; let run = "";
+      for (const t of tokens) { if (t.length === 1) run += t; else { if (run) merged.push(run); run = ""; merged.push(t); } }
+      if (run) merged.push(run);
+      // Allowed words ("Scunthorpe", "Classic") only count as a whole word, never inside another one
+      const spaced = " " + merged.join(" ") + " ";
+      if (PHRASES.some((p) => spaced.includes(" " + p + " ") || spaced.replace(/ /g, "").includes(p.replace(/ /g, "")) && merged.length === 1)) return "That name includes words that aren't allowed. Please choose a different name.";
+      // Checked word by word, so "Push It" isn't read as one word
+      for (const t of merged.filter((x) => !ALLOW.includes(x))) {
+        const tc = collapse(t);
+        if (SEVERE.some((w) => t.includes(w)) || SEVERE_C.some((w) => w.length >= 4 && tc.includes(w))) return "That name includes a word that isn't allowed. Please choose a different name.";
+      }
+      for (const t of merged) {
+        if (ALLOW.includes(t)) continue;
+        if (WHOLE.has(t)) return "That name includes a word that isn't allowed. Please choose a different name.";
+        const tc = collapse(t);
+        if (tc !== t && [...WHOLE].some((w) => collapse(w) === tc && w.length > 2)) return "That name includes a word that isn't allowed. Please choose a different name.";
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Remove whatever makes `text` fail checkText: whole words first, then the shortest run of words
+   * (for "f u c k", "kill your self" or a phone number written with spaces).
+   * keepLast: leave the last word alone while it is still being typed.
+   * Returns {text, removed}.
+   */
+  function sanitize(text, keepLast = false) {
+    let parts = String(text || "").split(/(\s+)/);          // words and the spaces between them
+    let tail = "";
+    if (keepLast && parts.length && !/\s$/.test(text)) tail = parts.pop();
+    const words = () => parts.filter((p) => !/^\s+$/.test(p) && p !== "");
+    let removed = false;
+    for (let guard = 0; guard < 20; guard++) {
+      const w = words();
+      if (!checkText(w.join(" "))) break;
+      // single words that fail on their own
+      const bad = w.filter((x) => checkText(x));
+      if (bad.length) { parts = parts.filter((p) => !bad.includes(p)); removed = true; continue; }
+      // otherwise the shortest run of words that fails together
+      let cut = null;
+      for (let len = 2; len <= w.length && !cut; len++)
+        for (let i = 0; i + len <= w.length && !cut; i++) if (checkText(w.slice(i, i + len).join(" "))) cut = [i, len];
+      if (!cut) break;
+      const drop = new Set(w.slice(cut[0], cut[0] + cut[1]).map((x, k) => cut[0] + k));
+      let idx = -1;
+      parts = parts.filter((p) => (/^\s+$/.test(p) || p === "") ? true : !drop.has(++idx));
+      removed = true;
+    }
+    let out = parts.join("").replace(/\s{2,}/g, " ").replace(/^\s+/, "");
+    if (tail) out += tail;
+    return { text: out, removed };
+  }
+
+  // ------------------------------------------------------------------ drawing shape check
+  /*
+   * Looks for the outline of a crude phallic doodle in icon pixels, at any angle.
+   * Colours are only used as supporting evidence; the decision is made on shape:
+   *   - an elongated bar of steady width (the "shaft"),
+   *   - a base at one end that is much wider and sticks out on BOTH sides,
+   *   - a notch in the middle of that base's outer edge (two lobes side by side),
+   *   - a far end that stays narrow (rules out bones and dumbbells).
+   * Returns {level: "block" | "flag", reason} or null.
+   */
+  function checkDrawing(px) {
+    const n = Math.round(Math.sqrt(px.length));
+    if (n * n !== px.length) return null;
+    const { masks, bg } = candidateMasks(px, n);
+    const colours = new Set(px.filter((c) => c && c !== bg));
+    // A drawing made only of dark line colours (an outline sketch)
+    const lineArt = colours.size > 0 && [...colours].every((h) => { const [r, g, b] = hexRgb(h); return 0.299 * r + 0.587 * g + 0.114 * b < 55; });
+    let best = null;
+    for (const mask of masks) {
+      for (const comp of components(fillHoles(mask, n), n)) {
+        if (comp.length < (n === 16 ? 10 : 24)) continue;
+        const r = analyseShape(comp, px, n, bg, lineArt);
+        if (r && (!best || r.score > best.score)) best = r;
+      }
+    }
+    if (!best) return null;
+    if (best.level === "block") return { level: "block", reason: "This drawing can't be used as an icon. Please draw something else, or use a pose snapshot or an emoji." };
+    return { level: "flag", reason: "This drawing is marked for a teacher to check." };
+  }
+
+  /** Masks to analyse: everything drawn, everything except a filled background, and each large colour group */
+  function candidateMasks(px, n) {
+    const masks = [px.map((c) => !!c)];
+    const border = [];
+    for (let i = 0; i < n; i++) border.push(px[i], px[(n - 1) * n + i], px[i * n], px[i * n + n - 1]);
+    const counts = {};
+    for (const c of border) if (c) counts[c] = (counts[c] || 0) + 1;
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const bg = top && top[1] > border.length * 0.4 ? top : null;   // a filled background colour, if there is one
+    if (bg) masks.push(px.map((c) => !!c && c !== bg[0]));
+    const totals = {};
+    px.forEach((c) => { if (c) totals[c] = (totals[c] || 0) + 1; });
+    // colours grouped loosely, so shading on the same object stays together
+    const groups = [];
+    for (const [c, k] of Object.entries(totals)) {
+      const rgb = hexRgb(c);
+      const g = groups.find((x) => Math.hypot(x.rgb[0] - rgb[0], x.rgb[1] - rgb[1], x.rgb[2] - rgb[2]) < 60);
+      if (g) { g.colors.add(c); g.count += k; } else groups.push({ rgb, colors: new Set([c]), count: k });
+    }
+    for (const g of groups) if (g.count >= n * 0.6 && (!bg || !g.colors.has(bg[0]))) masks.push(px.map((c) => !!c && g.colors.has(c)));
+    return { masks, bg: bg ? bg[0] : null };
+  }
+
+  function fillHoles(mask, n) {
+    const outside = new Array(n * n).fill(false), stack = [];
+    for (let i = 0; i < n; i++) for (const k of [i, (n - 1) * n + i, i * n, i * n + n - 1]) if (!mask[k] && !outside[k]) { outside[k] = true; stack.push(k); }
+    while (stack.length) {
+      const k = stack.pop(), x = k % n, y = (k / n) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const X = x + dx, Y = y + dy, j = Y * n + X;
+        if (X >= 0 && Y >= 0 && X < n && Y < n && !mask[j] && !outside[j]) { outside[j] = true; stack.push(j); }
+      }
+    }
+    return mask.map((m, k) => m || !outside[k]);
+  }
+
+  function components(mask, n) {
+    const seen = new Array(n * n).fill(false), out = [];
+    for (let s = 0; s < n * n; s++) {
+      if (!mask[s] || seen[s]) continue;
+      const comp = [], stack = [s]; seen[s] = true;
+      while (stack.length) {
+        const k = stack.pop(); comp.push(k);
+        const x = k % n, y = (k / n) | 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const X = x + dx, Y = y + dy, j = Y * n + X;
+          if ((dx || dy) && X >= 0 && Y >= 0 && X < n && Y < n && mask[j] && !seen[j]) { seen[j] = true; stack.push(j); }
+        }
+      }
+      out.push(comp);
+    }
+    return out;
+  }
+
+  function analyseShape(comp, px, n, bg, lineArt) {
+    // Principal axis of the shape
+    const pts = comp.map((k) => [k % n + 0.5, ((k / n) | 0) + 0.5]);
+    const mx = pts.reduce((a, p) => a + p[0], 0) / pts.length, my = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+    let sxx = 0, syy = 0, sxy = 0;
+    for (const [x, y] of pts) { sxx += (x - mx) ** 2; syy += (y - my) ** 2; sxy += (x - mx) * (y - my); }
+    const ang = 0.5 * Math.atan2(2 * sxy, sxx - syy), ca = Math.cos(ang), sa = Math.sin(ang);
+    const set = new Set(comp);
+    const inside = (x, y) => { const X = Math.floor(x), Y = Math.floor(y); return X >= 0 && Y >= 0 && X < n && Y < n && set.has(Y * n + X); };
+    // Resample the shape in its own frame (u along the axis, v across) at half-pixel steps
+    let umin = Infinity, umax = -Infinity, vmin = Infinity, vmax = -Infinity;
+    for (const [x, y] of pts) {
+      const u = (x - mx) * ca + (y - my) * sa, v = -(x - mx) * sa + (y - my) * ca;
+      umin = Math.min(umin, u - 0.7); umax = Math.max(umax, u + 0.7); vmin = Math.min(vmin, v - 0.7); vmax = Math.max(vmax, v + 0.7);
+    }
+    const step = 0.5, U = Math.ceil((umax - umin) / step), V = Math.ceil((vmax - vmin) / step);
+    const grid = [];
+    for (let i = 0; i < U; i++) {
+      const row = [];
+      for (let j = 0; j < V; j++) {
+        const u = umin + (i + 0.5) * step, v = vmin + (j + 0.5) * step;
+        row.push(inside(mx + u * ca - v * sa, my + u * sa + v * ca));
+      }
+      grid.push(row);
+    }
+    const widthAt = (i) => grid[i].filter(Boolean).length * step;
+    const spanAt = (i) => { const idx = grid[i].map((b, j) => (b ? j : -1)).filter((j) => j >= 0); return idx.length ? [idx[0], idx[idx.length - 1]] : null; };
+    let first = 0, last = U - 1;
+    while (first < U && !widthAt(first)) first++;
+    while (last > first && !widthAt(last)) last--;
+    const len = (last - first + 1) * step;
+    if (len < 4) return null;
+    const at = (f) => Math.min(last, Math.max(first, Math.round(first + f * (last - first))));
+    const mean = (a, b) => { let s = 0, c = 0; for (let i = at(a); i <= at(b); i++) { s += widthAt(i); c++; } return s / c; };
+    // Put the wide end first
+    let flipped = false;
+    if (mean(0, 0.3) < mean(0.7, 1)) { grid.reverse(); flipped = true; const f = U - 1 - last; last = U - 1 - first; first = f; }
+
+    const shaft = []; for (let i = at(0.45); i <= at(0.78); i++) shaft.push(widthAt(i));
+    shaft.sort((a, b) => a - b);
+    const ws = shaft[Math.floor(shaft.length / 2)];
+    if (!ws) return null;
+    let wb = 0, baseRow = first; for (let i = first; i <= at(0.4); i++) if (widthAt(i) > wb) { wb = widthAt(i); baseRow = i; }
+    const tip = Math.max(...Array.from({ length: last - at(0.88) + 1 }, (_, k) => widthAt(at(0.88) + k)));
+    const elong = len / ws >= 2.4;
+    const wideBase = wb / ws >= 1.55;
+    const steady = Array.from({ length: at(0.78) - at(0.45) + 1 }, (_, k) => widthAt(at(0.45) + k)).every((w) => w >= ws * 0.5 && w <= ws * (ws <= 3 ? 2 : 1.6));
+    // A rounded tip may be up to about twice the shaft at 16 px, but must stay well narrower than the base
+    // (bones and dumbbells are wide at both ends)
+    const narrowTip = tip <= ws * 2.25 && tip <= wb * 0.7;
+    let baseEnd = baseRow; while (baseEnd < last && widthAt(baseEnd) > ws * 1.3) baseEnd++;
+    const baseFrac = (baseEnd - first) * step / len;
+    const baseOk = baseFrac >= 0.12 && baseFrac <= 0.5;
+    // The base must stick out on both sides of the shaft
+    const shaftSpans = []; for (let i = at(0.55); i <= at(0.8); i++) { const sp = spanAt(i); if (sp) shaftSpans.push(sp); }
+    const sL = Math.min(...shaftSpans.map((s) => s[0])), sR = Math.max(...shaftSpans.map((s) => s[1]));
+    const bs = spanAt(baseRow);
+    const bumps = bs && (sL - bs[0]) * step >= ws * 0.3 && (bs[1] - sR) * step >= ws * 0.3;
+    if (!(elong && wideBase && steady && narrowTip && baseOk && bumps)) return null;
+
+    // Three or more separate bumps at the outer end (arm, head, arm; a crown; a trident) is not this shape
+    const bumpsIn = (row) => {
+      const segs = []; let j = 0;
+      while (j < row.length) { if (!row[j]) { j++; continue; } let k = j; while (k < row.length && row[k]) k++; segs.push([j, k]); j = k; }
+      const merged = [];
+      for (const sg of segs) { const prev = merged[merged.length - 1]; if (prev && sg[0] - prev[1] < 2) prev[1] = sg[1]; else merged.push(sg.slice()); }
+      return merged.filter(([a, b]) => b - a >= 2).length;
+    };
+    let maxRuns = 0;
+    for (let i = first; i <= baseRow; i++) maxRuns = Math.max(maxRuns, bumpsIn(grid[i]));
+    if (maxRuns >= 3) return null;
+
+    // Notch: across the base, how far the outer edge reaches; the middle should fall short of both lobes
+    const reach = [];
+    for (let j = bs[0]; j <= bs[1]; j++) { let i = first; while (i <= baseEnd && !grid[i][j]) i++; reach.push(i); }
+    const mid = Math.round(((sL + sR) / 2) - bs[0]);
+    const leftMin = Math.min(...reach.slice(0, Math.max(1, mid - 1))), rightMin = Math.min(...reach.slice(Math.min(reach.length - 1, mid + 2)));
+    const centre = Math.max(...reach.slice(Math.max(0, mid - 1), Math.min(reach.length, mid + 2)));
+    const notch = (centre - Math.max(leftMin, rightMin)) * step >= 0.75;
+
+    // Supporting evidence from colour: shaft and base drawn in the same colour, skin or pink tones
+    const colourAt = (i, j) => {
+      const ii = flipped ? U - 1 - i : i;
+      const u = umin + (ii + 0.5) * step, v = vmin + (j + 0.5) * step;
+      const X = Math.floor(mx + u * ca - v * sa), Y = Math.floor(my + u * sa + v * ca);
+      return X >= 0 && Y >= 0 && X < n && Y < n ? px[Y * n + X] : "";
+    };
+    const regionColours = (i0, i1, j0, j1) => {
+      const c = {};
+      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const h = grid[i] && grid[i][j] ? colourAt(i, j) : ""; if (h && h !== bg) c[h] = (c[h] || 0) + 1; }
+      return c;
+    };
+    const dominant = (i0, i1, j0, j1) => {
+      const c = regionColours(i0, i1, j0, j1);
+      const lum = (h) => { const [r, g, b] = hexRgb(h); return 0.299 * r + 0.587 * g + 0.114 * b; };
+      let list = Object.entries(c).filter(([h]) => h !== bg).sort((a, b) => b[1] - a[1]);
+      const fills = list.filter(([h]) => lum(h) >= 55);
+      if (fills.length) list = fills;
+      return list[0]?.[0];
+    };
+    const cShaft = dominant(at(0.55), at(0.8), sL, sR), cBase = dominant(first, baseEnd, bs[0], bs[1]);
+    const near = (a, b) => a && b && Math.hypot(...hexRgb(a).map((v, k) => v - hexRgb(b)[k])) < 70;
+    // Same colour, or every colour used in the shaft also appears in the base (e.g. an outlined drawing)
+    const shaftSet = Object.keys(regionColours(at(0.55), at(0.8), sL, sR)), baseSet = Object.keys(regionColours(first, baseEnd, bs[0], bs[1]));
+    const dark = (h) => { const [r, g, b] = hexRgb(h); return 0.299 * r + 0.587 * g + 0.114 * b < 55; };
+    const sameColour = near(cShaft, cBase) || (shaftSet.length > 0 && shaftSet.every(dark) && shaftSet.every((a) => baseSet.some((b) => near(a, b))));
+    const fleshy = (h) => h && (isSkinTone(...hexRgb(h)) || (() => { const [r, g, b] = hexRgb(h); return r > 170 && b > 110 && r - g > 40; })());
+    const skinish = fleshy(cShaft) || fleshy(cBase);
+
+    const score = 3 + (notch ? 2 : 0) + (sameColour ? 1 : 0) + (skinish ? 1 : 0);
+    // Rounded lobes curve into the shaft; a mushroom cap ends in a flat edge
+    const taper = (baseEnd - baseRow) * step / ws;
+    if (notch && sameColour) return { level: "block", score };
+    if ((notch && skinish) || (sameColour && taper >= 0.75 && (skinish || lineArt))) return { level: "flag", score };
+    return null;
+  }
+
+  // ------------------------------------------------------------------ image checks
+  /** Human skin tones (YCbCr range). Emoji yellow and most clothing colours fall outside it. */
+  function isSkinTone(r, g, b) {
+    const y = 0.299 * r + 0.587 * g + 0.114 * b;
+    const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b, cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+    return y > 60 && cb >= 77 && cb <= 127 && cr >= 137 && cr <= 173;
+  }
+  const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+
+  /** Share of drawn (non-transparent) pixels that are skin-coloured, for "#rrggbb"/"" icon pixels */
+  function skinShare(px) {
+    const drawn = px.filter(Boolean);
+    if (!drawn.length) return 0;
+    return drawn.filter((h) => isSkinTone(...hexRgb(h))).length / drawn.length;
+  }
+
+  /** Distinct-colour ratio over opaque pixels: pixel art is low, photos are high */
+  function colorStats(data) {
+    const seen = new Set(); let opaque = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 128) continue;
+      opaque++; seen.add((data[i] >> 3) << 10 | (data[i + 1] >> 3) << 5 | (data[i + 2] >> 3));
+    }
+    return { opaque, unique: seen.size, ratio: opaque ? seen.size / opaque : 0 };
+  }
+
+  /**
+   * Check an uploaded skin (canvas at any HD size).
+   * Returns {reject: string|null, unclothed: boolean}
+   */
+  function checkSkin(canvas) {
+    const w = canvas.width, h = canvas.height, k = w / 64;
+    const g = canvas.getContext("2d", { willReadFrequently: true });
+    const all = g.getImageData(0, 0, w, h).data;
+    const stats = colorStats(all);
+    // A skin has empty template areas: e.g. the 8×8 corners above the head texture
+    const emptyAreas = [[0, 0, 8, 8], [24, 0, 8, 8], [56, 0, 8, 8], [56, 16, 8, 16]];
+    let filled = 0, area = 0;
+    for (const [x, y, ww, hh] of emptyAreas) {
+      if ((y + hh) * k > h) continue;
+      const d = g.getImageData(x * k, y * k, ww * k, hh * k).data;
+      for (let i = 3; i < d.length; i += 4) { area++; if (d[i] > 200) filled++; }
+    }
+    const looksLikePhoto = stats.ratio > 0.3 && stats.unique > 300 * k;
+    if (looksLikePhoto || (area && filled / area > 0.95 && stats.ratio > 0.15))
+      return { reject: "That image doesn't look like a Minecraft skin. Use a skin PNG made for Minecraft (for example from Blockbench or a skin editor).", unclothed: false };
+
+    // Front of the torso and upper legs, outer layer on top of the base layer
+    const regions = [[[20, 20, 8, 12], [20, 36, 8, 12]], [[4, 20, 4, 7], [4, 36, 4, 7]], [[20, 52, 4, 7], [4, 52, 4, 7]]];
+    let skin = 0, total = 0;
+    for (const [base, over] of regions) {
+      if ((base[1] + base[3]) * k > h) continue;
+      const b = g.getImageData(base[0] * k, base[1] * k, base[2] * k, base[3] * k).data;
+      const o = (over[1] + over[3]) * k <= h ? g.getImageData(over[0] * k, over[1] * k, over[2] * k, over[3] * k).data : null;
+      for (let i = 0; i < b.length; i += 4) {
+        const src = o && o[i + 3] > 128 ? o : b;
+        if (src[i + 3] < 128) continue;
+        total++; if (isSkinTone(src[i], src[i + 1], src[i + 2])) skin++;
+      }
+    }
+    return { reject: null, unclothed: total > 0 && skin / total > 0.7 };
+  }
+
+  /** Check an image being imported into the icon editor. Returns null or a reason. */
+  function checkImportedArt(img) {
+    const cv = document.createElement("canvas");
+    const s = Math.min(1, 256 / Math.max(img.width, img.height));
+    cv.width = Math.max(1, Math.round(img.width * s)); cv.height = Math.max(1, Math.round(img.height * s));
+    const g = cv.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0, cv.width, cv.height);
+    const d = g.getImageData(0, 0, cv.width, cv.height).data;
+    const st = colorStats(d);
+    if (st.ratio > 0.25 && st.unique > 200) return "Photos can't be used as icons. Import pixel art instead, or draw your own.";
+    let skin = 0;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] >= 128 && isSkinTone(d[i], d[i + 1], d[i + 2])) skin++;
+    if (st.opaque && skin / st.opaque > 0.6) return "That image is mostly skin tones, so it can't be used as an icon. Try a different image.";
+    return null;
+  }
+
+  G.EmoteFilter = { checkText, sanitize, checkDrawing, checkSkin, checkImportedArt, skinShare, isSkinTone };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
 /* Generated by art/gen_ui_art.py — pixel art for the emoji emote menu. */
 (function (G) {
   G.EmoteUIArt = {"textures":{"panel":"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAhElEQVR4nGNkgAItKYH/DFQE1559YGRgYGBggRn+TL+HmuYzaDGU/L/27AMjI8xweTUdqhl+59g6BlYRNQapiyUQH8DA69cvqGYJDKBY8O39G6pbwER1E0ctGLVg1IJRC0YtGIoWwCucO8fW0cQCRgYG2lT6UhdLGK49+8DICBOgVbMFADERJaVvx8UZAAAAAElFTkSuQmCC","stripe":"iVBORw0KGgoAAAANSUhEUgAAACgAAAADCAYAAADhlU2YAAAAI0lEQVR4nGMU91/0n4HG4HlePE6599l1ePUyUdsx1AaD3oEA6VcFmZAs5BoAAAAASUVORK5CYII=","tile":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAxElEQVR4nO3WIROCMBjG8WeehTYrNo60RQKfhTUr1c+xSl2Tz0IwYvJsWLUZZ/De6SC6eYb9C7f3OH430sswS+TczmffdLre2efZHQgap1tID3K7WcIi5zZ2dKG1Ux+X1zMr/HPgmMi5Hc/H9yQromGyrLBaTCNh1BKMXAITmMAEJjCB/wgarSDLKjokywpGq9/fkAHA0Ld2tz8AALz9JkD094xWqJuOua3NaOW9ECr6LuWW06Fvg27c8+qmYx4YCyaIegIDb5MW3p/c+gAAAABJRU5ErkJggg==","tile_hover":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAA0ElEQVR4nGNkQANaUgL/0cUoAdeefWBE5sM5MIuu3pxBTfsYtNUzUCxmhFlGbYuwWXzt2QdGFrjI230QWn4mA8OXlQg+lQGjlpTA/6vHwhAiwk40s0zbahUDE4YojSyDAUwLaQxGLRy1cNTCUQtHLRy1cDBaOL+Ai0HbahXNLdK2WsUwv4CL/j5kZGBgYDjZJfU/ccI3BgYGBgaU9g0VACz05hdwMZiXPUO02uYXcKEooBaAmQsD8IbwyS4pqra40YF52TNEQxgZUNtimEUwAABrkTlwigwqRgAAAABJRU5ErkJggg==","tile_pressed":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAoElEQVR4nO3WsQ3CMBAF0H8RdZQ6I9hkASbwBKzAbkzAAjABuT6Na4sFQoGcxDjlXar7jeXfPNnVBw4O/Reu72ZJgGMqjOWSofF1lfTgL/cCpoxJQ3swx0Snpfm8f+fwBKbbehcOub6bx4dbm/ashvnAaKpWCcupQeUYaKCBBhpooIFAwzGRD6wO+cDgmOjwF9a7dDuoBJJ/r9il22gv7y+VuTL+FOzkNAAAAABJRU5ErkJggg==","close":"iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAXklEQVR4nGNkYGBg0JIS+M+AA1x79oGRRUtK4P9D6TRcahi0GGb9Z4JxvpzqRJFE5sMV8ZiVwyW+nOpk4DErx1SErBBZAYYimAJ0q5nQFaBbjeEmdKthgJGBgXA4AQCbRyeLX4vyAwAAAABJRU5ErkJggg==","close_hover":"iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAXUlEQVR4nGNkYGBg0JIS+M+AA1x79oGRRUtK4P9hvnxcahhsGSb+Z4JxhK43oEgi8+GK3mk2wCWErjcwvNPEoghZIbICDEUwBehWM6ErQLcaw03oVsMAIwMD4XACAF4fJ3P8P8vvAAAAAElFTkSuQmCC","badge":"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR4nGNgoBAwYhPUkhL4j0382rMPGOpRBGAar17LQgg+OgBnantcwzAIztCSEviPohFNMzLQ9rgGN4QJqwKtaRiaYbajAyYU2x8dwGkrMri6QwvuXYQLkDRe3aGFVRNOF1ACWNAFooOw+xUGZndx4Tdg6TotBgbdo1g1f1svTdgFDAwMDNGqggwMDAwMfTpRDAwMDAxFV5ZhtZ2BAT0dIAUUuleQNZvmfIOnA6wuwGXbkxuY6rAm5dNTsGsOnPKNgYEBR1LGZhA6wJaZKAYAJm1OR501m/oAAAAASUVORK5CYII="},"faces":{"smile":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"grin":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#e8506a","#e8506a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wink":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#e8506a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"hearts":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#e23a4a","#fff07a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"cool":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"laugh":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#e8506a","#e8506a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wow":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#8a3418","#8a3418","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"silly":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#c83a54","#e8506a","#2a1a10","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#e8506a","#e8506a","#2a1a10","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","#2a1a10","#2a1a10","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""]},"system":{"stop":["","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","",""],"cam_third":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#2a1a10","#2a1a10","#2a1a10","#c4cee2","#c4cee2","#febd01","#c4cee2","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#bfe3ff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#bfe3ff","#bfe3ff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2a1a10","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"cam_mine":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","#2a1a10","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#2a1a10","","","#2a1a10","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#2a1a10","#2a1a10","#2a1a10","#a8e6b2","#a8e6b2","#febd01","#a8e6b2","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#bfe3ff","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#bfe3ff","#bfe3ff","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2a1a10","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]}};
@@ -999,12 +1382,16 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   function problems(project) {
     const list = [];
     if (!project.emotes.length) list.push("Add at least one emote.");
+    const F = G.EmoteFilter;
     for (const em of project.emotes) {
       const r = boneReport(em);
       if (!em.name.trim()) list.push("Every emote needs a name.");
+      else if (F && F.checkText(em.name)) list.push(`Rename the emote “${em.name.replace(/./g, (c, i) => (i ? "•" : c))}”: ${F.checkText(em.name)}`);
       if (r.mapped === 0) list.push(`“${em.name}” has no body parts that match the player, so it would not move.`);
     }
     if (!project.packName.trim()) list.push("Give the pack a name.");
+    else if (F && F.checkText(project.packName)) list.push(`Pack name: ${F.checkText(project.packName)}`);
+    if (F && F.checkText(project.itemName)) list.push(`Item name: ${F.checkText(project.itemName)}`);
     return [...new Set(list)];
   }
 
@@ -1667,7 +2054,13 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     els.importFile.addEventListener("change", (e) => {
       const f = e.target.files[0]; e.target.value = ""; if (!f) return;
       const url = URL.createObjectURL(f), img = new Image();
-      img.onload = () => { snapshot(); px = fromImage(img, N); URL.revokeObjectURL(url); draw(); };
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const why = G.EmoteFilter && G.EmoteFilter.checkImportedArt(img);
+        if (els.msg) { els.msg.textContent = why || ""; els.msg.hidden = !why; }
+        if (why) return;
+        snapshot(); px = fromImage(img, N); draw();
+      };
       img.onerror = () => URL.revokeObjectURL(url);
       img.src = url;
     });
@@ -1677,7 +2070,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
       const t = { b: "pencil", p: "pencil", e: "eraser", g: "fill", f: "fill", i: "picker" }[e.key.toLowerCase()];
       if (t && !e.ctrlKey && !e.metaKey) setTool(t);
     });
-    els.save.onclick = () => { saveCb(px.slice()); close(); };
+    els.save.onclick = () => { if (saveCb(px.slice()) !== false) close(); };
     els.cancel.onclick = () => close();
     els.dialog.addEventListener("cancel", (e) => { e.preventDefault(); close(); });
 
@@ -1692,6 +2085,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
         els.book.textContent = opts.resetLabel || "Start from the book";
         px = (isValid(start) ? start : resetPixels()).slice(); undo = [];
         N = dim(px); CELL = SIZE / N;
+        if (els.msg) els.msg.hidden = true;
         const first = px.find((c) => c) || "#6a3fa6";
         setColor(first); setTool("pencil"); hover = -1; draw();
         try { els.dialog.showModal(); } catch { els.dialog.setAttribute("open", ""); }
@@ -1713,7 +2107,10 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
 
   // ------------------------------------------------------------ state
   let project = null, selected = null, saveTimer = 0;
-  const skin = { canvas: V.makeDefaultSkin(), slim: false, custom: false };
+  const skin = { canvas: V.makeDefaultSkin(), slim: false, custom: false, iconSafe: true };
+  // Default skins, kept ready so icons can fall back to them when a custom skin isn't suitable
+  const defaultSkins = {};
+  const iconSkin = () => (skin.iconSafe ? skin.canvas : defaultSkins[skin.slim ? "slim" : "classic"] || skin.canvas);
 
   const freshProject = () => P.newProject();
   // Every visit starts with an empty pack. Work carries over only through a downloaded add-on
@@ -1730,11 +2127,14 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   // ------------------------------------------------------------ helpers
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const secs = (n) => `${(+n).toFixed(2)} s`;
+  const F = window.EmoteFilter;
   function status(em) {
+    if (F.checkText(em.name)) return { cls: "bad", text: "Rename needed" };
     const r = P.boneReport(em);
     if (!r.total) return { cls: "bad", text: "No body parts" };
     if (r.mapped === 0) return { cls: "bad", text: "Won't move" };
     if (r.ignored.length) return { cls: "warn", text: `${r.ignored.length} part${r.ignored.length > 1 ? "s" : ""} unused` };
+    if (em.reviewFlag) return { cls: "warn", text: "Check icon" };
     return { cls: "ok", text: "Ready" };
   }
   let toastTimer = 0;
@@ -1751,6 +2151,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     renderIcon(); renderMenuStyle();
     if (document.activeElement !== $("pack-name")) $("pack-name").value = project.packName;
     if (document.activeElement !== $("item-name")) $("item-name").value = project.itemName;
+    for (const [id, v] of [["pack-name", project.packName], ["item-name", project.itemName]]) if (!$(id)._msgTimer) fieldError($(id), F.checkText(v));
     $("version-pill").textContent = "v" + project.version.join(".");
     $("pack-uuid").textContent = project.ids.bp;
     $("pack-uuid").title = `Behavior pack ${project.ids.bp}\nResource pack ${project.ids.rp}`;
@@ -1803,6 +2204,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     const gap = len - lastKey;
     const errs = E.molangErrors(em.anim);
     const notes = [];
+    if (em.reviewFlag) notes.push(`<div class="note warn"><b>Marked for a teacher to check.</b> ${FLAG_TEXT[em.reviewFlag] || "This icon needs a second look"}. Use a pose snapshot or an emoji to clear the mark.</div>`);
     if (r.mapped === 0) notes.push(`<div class="note bad"><b>This emote won't move in Minecraft.</b> None of its body parts match the player. Pick a player part for each row below, or animate on Blockbench's player template.</div>`);
     else if (r.ignored.length) notes.push(`<div class="note warn"><b>${r.ignored.length} part${r.ignored.length > 1 ? "s are" : " is"} not on the player</b> and will be left out. Choose a matching part below if it should move.</div>`);
     if (r.dupes.length) notes.push(`<div class="note warn">More than one row drives <span class="mono">${r.dupes.map(esc).join(", ")}</span>. Only one will show in-game.</div>`);
@@ -1810,7 +2212,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     if (errs.length) notes.push(`<div class="note warn"><b>Some Molang couldn't be previewed.</b> It will still be sent to Minecraft as written.<span class="mono">${errs.slice(0, 3).map(esc).join("<br>")}</span></div>`);
 
     el.innerHTML = `<div class="fields">
-      <label class="field"><span>Name in the menu</span><input type="text" id="em-name" maxlength="32" value="${esc(em.name)}" autocomplete="off"></label>
+      <label class="field"><span>Name in the menu</span><input type="text" id="em-name" maxlength="32" value="${esc(em.name)}" autocomplete="off" aria-invalid="${!!F.checkText(em.name)}">${F.checkText(em.name) ? `<small class="field-error" role="alert">${esc(F.checkText(em.name))}</small>` : ""}</label>
       <div class="field"><span>Menu icon</span>
         <div class="icon-row">
           <span class="slot"><canvas id="em-icon-thumb" aria-label="Menu icon for ${esc(em.name)}"></canvas></span>
@@ -1896,7 +2298,8 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     if (!snapper) return false;
     const auto = t === undefined;
     if (auto) t = snapper.bestTime(em);
-    try { em.icon = snapper.snap(em, t, skin.canvas, skin.slim); } catch { return false; }
+    try { em.icon = snapper.snap(em, t, iconSkin(), skin.slim); } catch { return false; }
+    em.reviewFlag = null;
     em.iconSource = auto ? "auto" : "frame"; em.iconTime = t; em.face = null;
     return true;
   }
@@ -1939,6 +2342,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     $("arms-classic").setAttribute("aria-pressed", String(!skin.slim));
     $("arms-slim").setAttribute("aria-pressed", String(skin.slim));
     $("skin-reset").hidden = !skin.custom;
+    $("skin-note").hidden = skin.iconSafe;
   }
   // With no skin of their own, each arm width shows its matching default skin
   async function setArms(slim) {
@@ -1949,7 +2353,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   $("arms-classic").onclick = () => setArms(false);
   $("arms-slim").onclick = () => setArms(true);
   $("skin-upload").onclick = () => $("skin-file").click();
-  $("skin-reset").onclick = async () => { skin.custom = false; skin.canvas = await V.loadDefaultSkin(skin.slim); applySkin(); storeSkin(); };
+  $("skin-reset").onclick = async () => { skin.custom = false; skin.iconSafe = true; skin.canvas = await V.loadDefaultSkin(skin.slim); applySkin(); storeSkin(); };
   function storeSkin() {
     try { localStorage.setItem(SKIN_STORE, JSON.stringify({ slim: skin.slim, data: skin.custom ? skin.canvas.toDataURL() : null })); } catch { /* not kept */ }
   }
@@ -1966,8 +2370,13 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     if (!f) return;
     const url = URL.createObjectURL(f);
     try {
-      skin.canvas = skinFromImage(await loadImage(url)); skin.custom = true; applySkin(); storeSkin();
-      const w = skin.canvas.width; toast(w > 64 ? `Previewing your ${w}×${skin.canvas.height} HD skin.` : "Previewing with your skin.");
+      const cv = skinFromImage(await loadImage(url));
+      const check = F.checkSkin(cv);
+      if (check.reject) { toast(check.reject); return; }
+      skin.canvas = cv; skin.custom = true; skin.iconSafe = !check.unclothed; applySkin(); storeSkin();
+      const w = cv.width;
+      toast(check.unclothed ? "Previewing your skin. It shows a lot of bare skin, so the menu icons will use the default skin instead."
+        : w > 64 ? `Previewing your ${w}×${cv.height} HD skin.` : "Previewing with your skin.");
     }
     catch (err) { toast(err.message); }
     finally { URL.revokeObjectURL(url); }
@@ -1975,8 +2384,15 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   async function restoreSkin() {
     try {
       const s = JSON.parse(localStorage.getItem(SKIN_STORE) || "null");
-      if (s) { skin.slim = !!s.slim; if (s.data) { skin.canvas = skinFromImage(await loadImage(s.data)); skin.custom = true; } }
+      if (s) {
+        skin.slim = !!s.slim;
+        if (s.data) {
+          const cv = skinFromImage(await loadImage(s.data)), check = F.checkSkin(cv);
+          if (!check.reject) { skin.canvas = cv; skin.custom = true; skin.iconSafe = !check.unclothed; }
+        }
+      }
     } catch { /* keep default */ }
+    defaultSkins.classic = await V.loadDefaultSkin(false); defaultSkins.slim = await V.loadDefaultSkin(true);
     if (!skin.custom) skin.canvas = await V.loadDefaultSkin(skin.slim);
     applySkin();
   }
@@ -2012,16 +2428,25 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
       }
     }
     if (added.length) {
-      added.forEach((em) => takeSnapshot(em));
+      let cleaned = 0;
+      added.forEach((em, i) => {
+        const r = F.sanitize(em.name);
+        if (r.removed) { cleaned++; em.name = r.text.trim() || `Emote ${project.emotes.length - added.length + i + 1}`; em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em); }
+        takeSnapshot(em);
+      });
+
       save(); select(added[0].key); renderAll();
       const bad = added.filter((em) => P.boneReport(em).mapped === 0).length;
-      toast(`Added ${added.length} emote${added.length > 1 ? "s" : ""}.` + (bad ? ` ${bad} need${bad > 1 ? "" : "s"} body parts matched.` : ""));
+      toast(`Added ${added.length} emote${added.length > 1 ? "s" : ""}.` + (bad ? ` ${bad} need${bad > 1 ? "" : "s"} body parts matched.` : "")
+        + (cleaned ? ` Removed words that aren't allowed from ${cleaned} name${cleaned > 1 ? "s" : ""}.` : ""));
     }
     if (errors.length) toast(errors.join(" · "));
   }
 
   function openProject(p, fileName) {
     P.ensureIcons(p);
+    for (const em of p.emotes) { const r = F.sanitize(em.name); if (r.removed) em.name = r.text.trim() || "Emote"; }
+    for (const k of ["packName", "itemName"]) { const r = F.sanitize(p[k]); if (r.removed) p[k] = r.text.trim() || (k === "packName" ? "My Emotes" : "Emote Book"); }
     const previous = project;
     project = p; unsaved = false;
     select(project.emotes[0] ? project.emotes[0].key : null); renderAll();
@@ -2058,8 +2483,54 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   }
   $("menu-pixel").onclick = () => { project.menuStyle = "pixel"; save(); renderMenuStyle(); };
   $("menu-classic").onclick = () => { project.menuStyle = "classic"; save(); renderMenuStyle(); };
-  $("pack-name").addEventListener("input", (e) => { project.packName = e.target.value; save(); renderPack(); renderProblems(false); });
-  $("item-name").addEventListener("input", (e) => { project.itemName = e.target.value; save(); renderPack(); });
+  /** Show (or clear) a name problem right under its field */
+  function fieldError(input, msg) {
+    input.setAttribute("aria-invalid", msg ? "true" : "false");
+    let el = input.parentElement.querySelector(".field-error");
+    if (!el) { el = document.createElement("small"); el.className = "field-error"; el.setAttribute("role", "alert"); input.insertAdjacentElement("afterend", el); }
+    el.textContent = msg || ""; el.hidden = !msg;
+  }
+  /**
+   * Remove words that aren't allowed as soon as they're finished (space, punctuation or leaving the field),
+   * then show a red message under the field for a few seconds.
+   */
+  const REMOVED_MSG = "That word isn't allowed, so it was removed.";
+
+  /**
+   * Check a drawing before it's saved. Returns "block" (message shown in the editor, not saved),
+   * "skin" / "shape" (saved, marked for a teacher) or null.
+   * `startedFrom`: pixels the edit began with; light touch-ups of a pose snapshot aren't re-checked.
+   */
+  function reviewDrawing(px, startedFrom) {
+    const msg = $("icon-msg");
+    if (startedFrom && startedFrom.length === px.length) {
+      const changed = px.filter((c, k) => c !== startedFrom[k]).length, drawn = px.filter(Boolean).length || 1;
+      if (changed / drawn <= 0.12) { msg.hidden = true; return null; }
+    }
+    const shape = F.checkDrawing(px);
+    if (shape && shape.level === "block") { msg.textContent = shape.reason; msg.hidden = false; return "block"; }
+    msg.hidden = true;
+    if (shape) return "shape";
+    return F.skinShare(px) > 0.6 ? "skin" : null;
+  }
+  const FLAG_TEXT = { skin: "This icon is mostly skin tones", shape: "This drawing's shape needs a second look" };
+  function cleanField(input, finished) {
+    const r = F.sanitize(input.value, !finished);
+    if (r.removed) {
+      input.value = finished ? r.text.trim() : r.text;
+      fieldError(input, REMOVED_MSG);
+      clearTimeout(input._msgTimer);
+      input._msgTimer = setTimeout(() => { input._msgTimer = null; if (input.isConnected) fieldError(input, F.checkText(input.value)); }, 6000);
+    } else if (finished || !input._msgTimer) {
+      fieldError(input, finished ? F.checkText(input.value) : null);
+    }
+    return input.value;
+  }
+  for (const [id, key] of [["pack-name", "packName"], ["item-name", "itemName"]]) {
+    const onEdit = (finished) => (e) => { project[key] = cleanField(e.target, finished); save(); renderPack(); renderProblems(false); };
+    $(id).addEventListener("input", onEdit(false));
+    $(id).addEventListener("change", onEdit(true));
+  }
 
   $("emote-list").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-act]"); if (!btn) return;
@@ -2077,7 +2548,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   insp.addEventListener("input", (e) => {
     const em = current(); if (!em) return;
     if (e.target.id === "em-name") {
-      em.name = e.target.value;
+      em.name = cleanField(e.target, false);
       em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em);
       save(); renderList(); renderStage(); renderProblems(false);
       const d = insp.querySelector(".facts dd:last-child"); if (d) d.textContent = P.animIdFor(project, em);
@@ -2085,6 +2556,12 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   });
   insp.addEventListener("change", (e) => {
     const em = current(); if (!em) return;
+    if (e.target.id === "em-name") {
+      em.name = cleanField(e.target, true);
+      em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em);
+      save(); renderList(); renderStage(); renderProblems(false);
+      return;
+    }
     if (e.target.id === "em-loop") {
       em.loop = e.target.checked; preview.setEmote(em); save(); renderList(); renderInspector(); renderStage();
       $("em-loop").focus();
@@ -2100,7 +2577,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     const em = current(); if (!em) return;
     const faceBtn = e.target.closest("button[data-face]");
     if (faceBtn) {
-      em.face = faceBtn.dataset.face; em.icon = P.facePixels(em.face); em.iconSource = "face"; save();
+      em.face = faceBtn.dataset.face; em.icon = P.facePixels(em.face); em.iconSource = "face"; em.reviewFlag = null; save();
       renderList(); renderInspector(); paintInspectorIcons();
       insp.querySelector(`button[data-face="${em.face}"]`)?.focus();
       return;
@@ -2115,14 +2592,20 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     }
     if (e.target.id === "em-icon-edit") {
       const pose = em.iconSource === "auto" || em.iconSource === "frame";
+      const startPx = em.icon.slice();
       iconEditor.open(em.icon, {
         title: `Menu icon for ${em.name || "this emote"}`, previewLabel: "On the menu tile",
         resetLabel: pose ? "Start from the snapshot" : "Start from the face",
-        resetPixels: () => (pose && snapper ? snapper.snap(em, em.iconTime || 0, skin.canvas, skin.slim) : P.facePixels(em.face || "smile")),
+        resetPixels: () => (pose && snapper ? snapper.snap(em, em.iconTime || 0, iconSkin(), skin.slim) : P.facePixels(em.face || "smile")),
         onSave: (px) => {
           if (!px.some((c) => c)) { toast("The icon is empty, so it wasn't saved."); return; }
-          em.icon = px; em.face = null; em.iconSource = "custom"; save(); renderList(); renderInspector(); paintInspectorIcons();
-          toast(`Saved the menu icon for ${em.name}.`);
+          if (px.join() === startPx.join()) return;   // nothing changed: keep the icon (and its snapshot status) as it was
+          const verdict = reviewDrawing(px, pose ? startPx : null);
+          if (verdict === "block") return false;
+          em.icon = px; em.face = null; em.iconSource = "custom";
+          em.reviewFlag = verdict;
+          save(); renderList(); renderInspector(); paintInspectorIcons();
+          toast(em.reviewFlag ? `Saved. ${FLAG_TEXT[em.reviewFlag]}, so it's marked for a teacher to check.` : `Saved the menu icon for ${em.name}.`);
         },
       });
       return;
@@ -2149,7 +2632,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   function renderIcon() {
     I.paint($("icon-thumb"), iconPixels(), 1);
     const custom = I.isValid(project.icon);
-    $("icon-kind").textContent = custom ? "Your design" : "Emote Book (default)";
+    $("icon-kind").textContent = custom ? (project.iconReviewFlag ? "Your design · marked for a teacher to check" : "Your design") : "Emote Book (default)";
     $("icon-edit").textContent = custom ? "Edit icon" : "Design icon";
     $("icon-default").hidden = !custom;
   }
@@ -2157,12 +2640,16 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     dialog: $("icon-dialog"), grid: $("icon-grid"), tools: $("icon-tools"), palette: $("icon-palette"), recent: $("icon-recent"),
     color: $("icon-color"), colorHex: $("icon-color-hex"), prev1: $("icon-prev1"), prev2: $("icon-prev2"),
     undo: $("icon-undo"), clear: $("icon-clear"), book: $("icon-book"), importBtn: $("icon-import"), importFile: $("icon-import-file"),
-    save: $("icon-save"), cancel: $("icon-cancel"), title: $("icon-dialog-h"), prevCaption: $("icon-prev2-cap"),
+    save: $("icon-save"), cancel: $("icon-cancel"), title: $("icon-dialog-h"), prevCaption: $("icon-prev2-cap"), msg: $("icon-msg"),
   }, (px) => {
     const isBook = px.join() === I.bookPixels().join();
     if (!px.some((c) => c)) { toast("The icon is empty, so it wasn't saved. Draw something or use the book."); return; }
-    project.icon = isBook ? null : px; save(); renderIcon();
-    toast(isBook ? "Using the Emote Book icon." : "Icon saved. It will be in your next download.");
+    const verdict = isBook ? null : reviewDrawing(px);
+    if (verdict === "block") return false;
+    project.icon = isBook ? null : px;
+    project.iconReviewFlag = verdict;
+    save(); renderIcon();
+    toast(isBook ? "Using the Emote Book icon." : verdict ? `Saved. ${FLAG_TEXT[verdict]}, so it's marked for a teacher to check.` : "Icon saved. It will be in your next download.");
   });
   $("icon-edit").onclick = () => iconEditor.open(project.icon);
   $("icon-default").onclick = () => {
