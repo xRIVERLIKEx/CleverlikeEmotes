@@ -456,8 +456,6 @@ input[type="color"] { width: 44px; height: 32px; border: 1px solid var(--line); 
         <button class="btn" type="button" id="icon-undo">Undo</button>
         <button class="btn" type="button" id="icon-clear">Clear</button>
         <button class="btn" type="button" id="icon-book">Start from the book</button>
-        <button class="btn" type="button" id="icon-import">Import PNG…</button>
-        <input type="file" id="icon-import-file" accept="image/png,image/gif,image/webp" hidden>
       </div>
     </div>
   </div>
@@ -780,8 +778,8 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
 
 /* Cleverlike Emote Tool — content checks for student work
  * Text: blocks profanity, slurs, violence, sexual and drug terms, self-harm phrases and contact info in names.
- * Images: rejects photos and non-skin images as skins, flags unclothed-looking skins, rejects photo
- * or skin-tone-heavy icon imports, and flags hand-drawn icons that are mostly skin tones.
+ * Images: rejects photos and non-skin images as skins, flags unclothed-looking skins, and checks
+ * hand-drawn icons (shape check + skin-tone share).
  * Word lists are stored ROT13-encoded so they aren't readable at a glance in the page source.
  * Teachers can add words with EXTRA_WORDS (plain text, whole-word matches). */
 (function (G) {
@@ -1067,8 +1065,38 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     const score = 3 + (notch ? 2 : 0) + (sameColour ? 1 : 0) + (skinish ? 1 : 0);
     // Rounded lobes curve into the shaft; a mushroom cap ends in a flat edge
     const taper = (baseEnd - baseRow) * step / ws;
+    // Split lobes: the shaft's colour runs down the middle of the base, with differently coloured lobes on both sides
+    // (a two-colour drawing hides the notch, so this is checked separately)
+    const midJ = Math.round((sL + sR) / 2);
+    let through = 0, baseRows = 0;
+    for (let i = first; i <= baseEnd; i++) {
+      if (!grid[i][midJ]) continue;
+      baseRows++;
+      const c = colourAt(i, midJ), c2 = colourAt(i, Math.max(sL, midJ - 1));
+      if (near(c, cShaft) || near(c2, cShaft)) through++;
+    }
+    const sideL = dominant(first, baseEnd, bs[0], Math.max(bs[0], sL - 1)), sideR = dominant(first, baseEnd, Math.min(bs[1], sR + 1), bs[1]);
+    const splitLobes = baseRows >= 2 && through / baseRows >= 0.6 && sideL && sideR && !near(sideL, cShaft) && !near(sideR, cShaft);
+    // Rockets share this layout; a nose cone in another colour than the body keeps it to a flag
+    const cTip = dominant(at(0.88), last, sL, sR);
+    const tipMatches = !cTip || near(cTip, cShaft);
+
+    // Shape of the base: two lobes side by side make a short, wide, rounded block; discs, domes and triangles differ
+    const baseLen = Math.max(step, (baseEnd - first) * step);
+    let area = 0; for (let i = first; i <= baseEnd; i++) area += widthAt(i);
+    const fill = area * step / (wb * baseLen);
+    const outer = widthAt(Math.min(last, first + 1)) / wb;          // width right at the outer end
+    const feats = { baseAspect: wb / baseLen, fill, outer, rise: (baseRow - first) * step / ws, tipRatio: tip / ws, wbws: wb / ws, taper };
     if (notch && sameColour) return { level: "block", score };
-    if ((notch && skinish) || (sameColour && taper >= 0.75 && (skinish || lineArt))) return { level: "flag", score };
+    if (splitLobes && tipMatches) return { level: "block", score };
+    // The outline alone matches: mark it for a teacher whatever the colours, unless the base is clearly
+    // a disc or triangle (too narrow for two lobes), a mushroom cap (hollow-ish and widest far in),
+    // or a fin/arrowhead shape (widest right at the outer edge)
+    const discOrTriangle = feats.baseAspect < 1.3;
+    const domeCap = feats.fill < 0.74 && feats.rise >= 0.9;
+    const finEdge = feats.rise < 0.2;
+    if (discOrTriangle || domeCap || finEdge) return null;
+    return { level: "flag", score };
     return null;
   }
 
@@ -1135,22 +1163,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     return { reject: null, unclothed: total > 0 && skin / total > 0.7 };
   }
 
-  /** Check an image being imported into the icon editor. Returns null or a reason. */
-  function checkImportedArt(img) {
-    const cv = document.createElement("canvas");
-    const s = Math.min(1, 256 / Math.max(img.width, img.height));
-    cv.width = Math.max(1, Math.round(img.width * s)); cv.height = Math.max(1, Math.round(img.height * s));
-    const g = cv.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0, cv.width, cv.height);
-    const d = g.getImageData(0, 0, cv.width, cv.height).data;
-    const st = colorStats(d);
-    if (st.ratio > 0.25 && st.unique > 200) return "Photos can't be used as icons. Import pixel art instead, or draw your own.";
-    let skin = 0;
-    for (let i = 0; i < d.length; i += 4) if (d[i + 3] >= 128 && isSkinTone(d[i], d[i + 1], d[i + 2])) skin++;
-    if (st.opaque && skin / st.opaque > 0.6) return "That image is mostly skin tones, so it can't be used as an icon. Try a different image.";
-    return null;
-  }
-
-  G.EmoteFilter = { checkText, sanitize, checkDrawing, checkSkin, checkImportedArt, skinShare, isSkinTone };
+  G.EmoteFilter = { checkText, sanitize, checkDrawing, checkSkin, skinShare, isSkinTone };
 })(typeof window !== "undefined" ? window : globalThis);
 
 
@@ -1925,19 +1938,6 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     paint(cv, px, Math.max(1, Math.round(size / dim(px))));
     return new Promise((res) => cv.toBlob(async (b) => res(new Uint8Array(await b.arrayBuffer())), "image/png"));
   }
-  /** Read any image into 16×16 pixels (larger images are sampled nearest-neighbour) */
-  function fromImage(img, N = 16) {
-    const cv = document.createElement("canvas"); cv.width = cv.height = N;
-    const g = cv.getContext("2d"); g.imageSmoothingEnabled = false;
-    g.drawImage(img, 0, 0, N, N);
-    const d = g.getImageData(0, 0, N, N).data, px = [];
-    for (let k = 0; k < N * N; k++) {
-      const a = d[k * 4 + 3];
-      px.push(a < 128 ? "" : "#" + [0, 1, 2].map((o) => d[k * 4 + o].toString(16).padStart(2, "0")).join(""));
-    }
-    return px;
-  }
-
   const PALETTE = [
     "#000000", "#3f3f3f", "#7f7f7f", "#bfbfbf", "#ffffff",
     "#5a2d0c", "#8b5a2b", "#c98e66", "#f2c49b", "#efe8d6",
@@ -2050,20 +2050,6 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     els.undo.onclick = () => { if (undo.length) { px = undo.pop(); draw(); } };
     els.clear.onclick = () => { snapshot(); px = new Array(N * N).fill(""); draw(); };
     els.book.onclick = () => { snapshot(); px = resetPixels(); draw(); };
-    els.importBtn.onclick = () => els.importFile.click();
-    els.importFile.addEventListener("change", (e) => {
-      const f = e.target.files[0]; e.target.value = ""; if (!f) return;
-      const url = URL.createObjectURL(f), img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const why = G.EmoteFilter && G.EmoteFilter.checkImportedArt(img);
-        if (els.msg) { els.msg.textContent = why || ""; els.msg.hidden = !why; }
-        if (why) return;
-        snapshot(); px = fromImage(img, N); draw();
-      };
-      img.onerror = () => URL.revokeObjectURL(url);
-      img.src = url;
-    });
     els.dialog.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT") return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); els.undo.click(); return; }
@@ -2094,7 +2080,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
     };
   }
 
-  G.EmoteIcon = { N, dim, bookPixels, isValid, paint, toPng, fromImage, createEditor, PALETTE };
+  G.EmoteIcon = { N, dim, bookPixels, isValid, paint, toPng, createEditor, PALETTE };
 })(typeof window !== "undefined" ? window : globalThis);
 
 
@@ -2445,12 +2431,26 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
 
   function openProject(p, fileName) {
     P.ensureIcons(p);
+    // Icons inside an add-on could have been edited outside the tool: check them like a fresh drawing
+    let reset = 0;
+    p.emotes.forEach((em, i) => {
+      if (em.iconSource === "auto" || em.iconSource === "frame" || em.iconSource === "face") return;
+      const shape = F.checkDrawing(em.icon);
+      if (shape && shape.level === "block") { em.face = P.FACE_ORDER[i % P.FACE_ORDER.length]; em.icon = P.facePixels(em.face); em.iconSource = "face"; em.reviewFlag = null; reset++; }
+      else em.reviewFlag = shape ? "shape" : F.skinShare(em.icon) > 0.6 ? "skin" : em.reviewFlag || null;
+    });
+    if (Array.isArray(p.icon)) {
+      const shape = F.checkDrawing(p.icon);
+      if (shape && shape.level === "block") { p.icon = null; p.iconReviewFlag = null; reset++; }
+      else p.iconReviewFlag = shape ? "shape" : F.skinShare(p.icon) > 0.6 ? "skin" : p.iconReviewFlag || null;
+    }
+    const resetNote = reset ? ` ${reset} icon${reset > 1 ? "s" : ""} couldn't be used and ${reset > 1 ? "were" : "was"} replaced.` : "";
     for (const em of p.emotes) { const r = F.sanitize(em.name); if (r.removed) em.name = r.text.trim() || "Emote"; }
     for (const k of ["packName", "itemName"]) { const r = F.sanitize(p[k]); if (r.removed) p[k] = r.text.trim() || (k === "packName" ? "My Emotes" : "Emote Book"); }
     const previous = project;
     project = p; unsaved = false;
     select(project.emotes[0] ? project.emotes[0].key : null); renderAll();
-    toast(`Opened ${fileName}: ${p.emotes.length} emote${p.emotes.length === 1 ? "" : "s"}.`, "Undo", () => {
+    toast(`Opened ${fileName}: ${p.emotes.length} emote${p.emotes.length === 1 ? "" : "s"}.${resetNote}`, "Undo", () => {
       project = previous; save(); select(project.emotes[0] ? project.emotes[0].key : null); renderAll();
     });
   }
@@ -2639,7 +2639,7 @@ window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@mine
   const iconEditor = I.createEditor({
     dialog: $("icon-dialog"), grid: $("icon-grid"), tools: $("icon-tools"), palette: $("icon-palette"), recent: $("icon-recent"),
     color: $("icon-color"), colorHex: $("icon-color-hex"), prev1: $("icon-prev1"), prev2: $("icon-prev2"),
-    undo: $("icon-undo"), clear: $("icon-clear"), book: $("icon-book"), importBtn: $("icon-import"), importFile: $("icon-import-file"),
+    undo: $("icon-undo"), clear: $("icon-clear"), book: $("icon-book"),
     save: $("icon-save"), cancel: $("icon-cancel"), title: $("icon-dialog-h"), prevCaption: $("icon-prev2-cap"), msg: $("icon-msg"),
   }, (px) => {
     const isBook = px.join() === I.bookPixels().join();
