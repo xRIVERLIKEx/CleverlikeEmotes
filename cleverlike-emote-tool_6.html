@@ -1,0 +1,2240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Cleverlike Emote Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: a three-pane workbench — pack + emote list | live 3D stage | selected-emote inspector —
+   under a Cleverlike navy bar. Collapses to two panes, then one column on phones.
+   Palette sampled from cleverlike.school: slate neutrals, navy nav, bright-blue actions,
+   and the blue / yellow / pink stripe used on course thumbnails. */
+:root {
+  --bg: #f8fafc;        /* slate-50 page ground */
+  --panel: #ffffff;
+  --sunk: #f1f5f9;      /* slate-100: inputs, secondary buttons */
+  --ink: #1d293d;       /* headings + body */
+  --muted: #62748e;     /* slate-500 */
+  --soft: #4a5565;      /* meta text */
+  --line: #e2e8f0;      /* slate-200 borders + dividers */
+  --line-strong: #cbd5e1; --sunk-hover: #e8eef5;
+  --nav: #10499c;       /* top bar */
+  --nav-ink: #ffffff;
+  --nav-soft: #b8d0f2;
+  --cyan: #00aef0;      /* logo cyan; focus rings */
+  --accent: #2b7fff;    /* primary actions */
+  --accent-hover: #1665e8;
+  --accent-ink: #ffffff;
+  --accent-soft: #eaf2ff;
+  --stripe-blue: #174fa2; --stripe-yellow: #febd01; --stripe-pink: #ed287f;
+  --ok: #15803d; --ok-soft: #dcfce7;
+  --warn: #a16207; --warn-soft: #fef3c7;
+  --bad: #c81e1e; --bad-soft: #fee2e2;
+  --stage: #dfe5ee; --stage-line: #b4c0d2;
+  --book: #6a3fa6; --book-spine: #4b2a7a; --page: #efe8d6; --gold: #e0a92a;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --slot: #475569; --slot-edge: #334155;           /* hotbar slot behind the item icon */
+  --check-a: #e2e8f0; --check-b: #f8fafc;          /* transparency checkerboard */
+  --grid-line: rgba(15, 23, 42, 0.12); --grid-major: rgba(15, 23, 42, 0.32);
+  --f-display: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1120; --panel: #111a2e; --sunk: #1a2540; --ink: #e2e8f0; --muted: #94a3b8; --soft: #cbd5e1; --line: #24324d; --line-strong: #3a4b6b; --sunk-hover: #22305a;
+    --nav: #0c3a7d; --nav-soft: #a9c4ee; --accent: #4d94ff; --accent-hover: #75acff; --accent-ink: #06122a; --accent-soft: #15284a;
+    --ok: #4ade80; --ok-soft: #12301f; --warn: #fbbf24; --warn-soft: #33270b; --bad: #f87171; --bad-soft: #3b1515;
+    --stage: #0a1324; --stage-line: #2b3b58; --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --slot: #1e293b; --slot-edge: #0f172a; --check-a: #1e293b; --check-b: #273449; --grid-line: rgba(226, 232, 240, 0.12); --grid-major: rgba(226, 232, 240, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1120; --panel: #111a2e; --sunk: #1a2540; --ink: #e2e8f0; --muted: #94a3b8; --soft: #cbd5e1; --line: #24324d; --line-strong: #3a4b6b; --sunk-hover: #22305a;
+  --nav: #0c3a7d; --nav-soft: #a9c4ee; --accent: #4d94ff; --accent-hover: #75acff; --accent-ink: #06122a; --accent-soft: #15284a;
+  --ok: #4ade80; --ok-soft: #12301f; --warn: #fbbf24; --warn-soft: #33270b; --bad: #f87171; --bad-soft: #3b1515;
+  --stage: #0a1324; --stage-line: #2b3b58; --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --slot: #1e293b; --slot-edge: #0f172a; --check-a: #1e293b; --check-b: #273449; --grid-line: rgba(226, 232, 240, 0.12); --grid-major: rgba(226, 232, 240, 0.35);
+    color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+h1, h2, h3 { text-wrap: balance; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); font-size: 0.86em; }
+.muted { color: var(--muted); }
+
+/* ---------- top bar ---------- */
+.topbar { background: var(--nav); color: var(--nav-ink); box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18); position: relative; z-index: 1; }
+.topbar-inner { max-width: 1760px; margin-inline: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 20px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; margin-right: auto; }
+.brand svg { width: 36px; height: 36px; flex: none; image-rendering: pixelated; }
+.brand h1 { font: 800 1.3rem/1.1 var(--f-display); margin: 0; letter-spacing: 0.005em; }
+.brand h1 span { color: var(--cyan); }
+.brand p { margin: 2px 0 0; color: var(--nav-soft); font-size: 0.86rem; font-weight: 600; }
+.topbar .btn { background: transparent; color: var(--nav-ink); border-color: rgba(255, 255, 255, 0.45); }
+.topbar .btn:hover { background: rgba(255, 255, 255, 0.12); border-color: #ffffff; }
+
+/* ---------- buttons ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); border-radius: var(--r); padding: 8px 14px; cursor: pointer; font-weight: 700; font-size: 0.9rem; line-height: 1.2; text-decoration: none; transition: background 0.12s, border-color 0.12s; }
+.btn:hover { border-color: var(--line-strong); background: var(--sunk-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn.big { padding: 12px 16px; font-size: 1rem; width: 100%; }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--sunk); border-color: transparent; }
+.btn.danger { background: transparent; }
+.btn.icon { padding: 6px 8px; }
+.btn.danger { color: var(--bad); }
+
+/* ---------- workspace grid ---------- */
+.workspace { max-width: 1760px; margin-inline: auto; width: 100%; display: grid; gap: 16px; padding: 16px 20px 24px;
+  grid-template-columns: minmax(270px, 320px) minmax(0, 1fr) minmax(310px, 380px); grid-template-areas: "left stage right"; align-items: start; }
+.col-left { grid-area: left; } .stage { grid-area: stage; } .col-right { grid-area: right; }
+.scroll { min-height: 0; }
+/* Desktop: the tool fills the window; each column scrolls on its own */
+@media (min-width: 1181px) and (min-height: 680px) {
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+  .topbar { flex: none; }
+  .workspace { flex: 1; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .col { min-height: 0; }
+  .emotes-pane, .inspector { flex: 1 1 0; min-height: 160px; display: flex; flex-direction: column; }
+  .emotes-pane > .scroll, .inspector > .scroll { flex: 1; overflow: auto; }
+  .pack-pane, .export-pane { flex: none; }
+  .stage { display: flex; flex-direction: column; min-height: 0; }
+  .stage .stage-wrap { flex: 1; height: auto; min-height: 260px; }
+}
+@media (max-width: 1180px) {
+  .workspace { grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); grid-template-areas: "left stage" "left right"; }
+}
+@media (max-width: 760px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; padding-inline: 16px; }
+  .workspace > .col { display: contents; }
+  .stage, .col > .pane { grid-area: auto; }
+  .stage { order: 1; } .emotes-pane { order: 2; } .inspector { order: 3; } .pack-pane { order: 4; } .export-pane { order: 5; }
+  .topbar-inner { padding-inline: 16px; }
+}
+.pane { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; box-shadow: var(--shadow); }
+.pane > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 16px; padding: 16px 2px 12px; border-bottom: 1px solid var(--line); }
+.label { font: 800 1.15rem/1.2 var(--f-display); color: var(--ink); margin: 0; }
+.eyebrow, .stage-empty .eyebrow { font: 800 0.74rem/1 var(--f-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* ---------- form fields ---------- */
+.fields { display: grid; gap: 12px; padding: 12px 16px 16px; }
+.pack-pane .fields { gap: 10px; padding-block: 10px 14px; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.field > span { font-size: 0.82rem; font-weight: 700; }
+.field small { color: var(--muted); font-size: 0.78rem; }
+input[type="text"], select { width: 100%; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 7px 10px; }
+input[type="text"]:focus, select:focus { border-color: var(--accent); }
+
+/* ---------- emote list ---------- */
+.emote-list { list-style: none; margin: 0; padding: 10px 8px 4px; display: grid; gap: 4px; }
+.emote { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; border-radius: var(--r); border: 1px solid transparent; }
+.emote > button.pick { all: unset; cursor: pointer; display: grid; gap: 2px; padding: 8px 10px; min-width: 0; border-radius: var(--r); }
+.emote > button.pick:focus-visible { outline: 2px solid var(--cyan); }
+.emote:hover { background: var(--sunk); }
+.emote[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.emote .name { font-weight: 700; overflow-wrap: anywhere; }
+.emote .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--muted); }
+.emote .order { display: flex; flex-direction: column; padding-right: 4px; }
+.emote .order button { all: unset; cursor: pointer; padding: 0 6px; color: var(--muted); font-size: 0.75rem; line-height: 1.3; border-radius: 3px; }
+.emote .order button:hover { color: var(--ink); background: var(--line); }
+.emote .order button:disabled { visibility: hidden; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.empty { padding: 16px; color: var(--muted); font-size: 0.9rem; }
+
+.drop { margin: 8px 16px 16px; border: 2px dashed var(--line); border-radius: 8px; padding: 14px; text-align: center; display: grid; gap: 6px; justify-items: center; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop p { margin: 0; font-size: 0.82rem; color: var(--muted); }
+
+/* ---------- stage ---------- */
+.stage-wrap { position: relative; height: clamp(320px, 58vh, 620px); border-radius: var(--r) var(--r) 0 0; overflow: hidden; background: var(--stage); }
+.stripe { height: 7px; background: linear-gradient(100deg, var(--stripe-blue) 0 63.5%, var(--stripe-yellow) 63.5% 81%, var(--stripe-pink) 81% 100%); }
+.stage-wrap canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.stage-wrap canvas:active { cursor: grabbing; }
+.stage-title { position: absolute; left: 14px; top: 12px; right: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; pointer-events: none; }
+.stage-title strong { font: 800 1.3rem/1.1 var(--f-display); color: var(--ink); overflow-wrap: anywhere; }
+.stage-empty { padding: 16px 18px; display: grid; gap: 8px; justify-items: start; }
+.stage-empty h2 { font: 800 1.25rem/1.2 var(--f-display); margin: 0; }
+.stage-empty p { margin: 0; font-size: 0.9rem; color: var(--soft); max-width: 60ch; }
+.stage-hint { position: absolute; right: 12px; bottom: 10px; font-size: 0.75rem; color: var(--muted); pointer-events: none; }
+.transport { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.transport input[type="range"] { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
+.time { font-family: var(--f-mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 9.5ch; text-align: right; }
+.skinbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); font-size: 0.86rem; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.seg button { all: unset; cursor: pointer; padding: 5px 10px; font-size: 0.82rem; font-weight: 700; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+
+/* ---------- inspector ---------- */
+.switch { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.switch input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 99px; background: var(--line); position: relative; cursor: pointer; margin: 1px 0 0; transition: background 0.15s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel); transition: transform 0.15s; }
+.switch input:checked { background: var(--accent); }
+.switch input:checked::after { transform: translateX(16px); }
+.switch b { display: block; font-size: 0.9rem; }
+.switch small { color: var(--muted); font-size: 0.8rem; }
+.note { border-radius: var(--r); padding: 9px 11px; font-size: 0.84rem; display: grid; gap: 6px; }
+.note.warn { background: var(--warn-soft); color: var(--ink); border-left: 3px solid var(--warn); }
+.note.bad { background: var(--bad-soft); color: var(--ink); border-left: 3px solid var(--bad); }
+.note.info { background: var(--accent-soft); color: var(--ink); border-left: 3px solid var(--accent); }
+.note .btn { justify-self: start; padding: 4px 10px; font-size: 0.8rem; }
+.bones { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.bones th { text-align: left; font-weight: 700; font-size: 0.75rem; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.bones td { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.bones td:first-child { overflow-wrap: anywhere; }
+.bones select { padding: 4px 6px; font-size: 0.82rem; }
+.bones .arrow { color: var(--muted); width: 1.2em; text-align: center; }
+.bones tr.unused td:first-child { color: var(--muted); text-decoration: line-through; }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 0.84rem; margin: 0; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+/* ---------- export ---------- */
+.export { padding: 12px 16px 16px; display: grid; gap: 10px; }
+.problems { margin: 0; padding-left: 18px; color: var(--bad); font-size: 0.84rem; display: grid; gap: 3px; }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 0.84rem; color: var(--muted); }
+.steps b { color: var(--ink); }
+details.help summary { cursor: pointer; font-weight: 700; font-size: 0.86rem; }
+details.help[open] summary { margin-bottom: 8px; }
+
+.version-box { display: inline-flex; align-items: center; gap: 8px; }
+.version-box .btn { padding: 4px 10px; font-size: 0.8rem; }
+.pack-id { margin: 0; font-size: 0.78rem; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; }
+.pack-id .mono { color: var(--soft); overflow-wrap: anywhere; }
+.pack-id.flash .mono { background: var(--accent-soft); border-radius: 3px; }
+
+.pack-pane .seg { justify-self: start; }
+.pack-pane .field small { font-size: 0.76rem; }
+.pack-pane .slot { width: 44px; height: 44px; }
+
+/* ---------- emote icons ---------- */
+.emote > button.pick { grid-template-columns: 32px minmax(0, 1fr); column-gap: 10px; align-items: center; }
+.emote .li-icon { grid-row: span 2; width: 32px; height: 32px; image-rendering: pixelated; }
+.emote .name, .emote .meta { grid-column: 2; }
+.faces { display: grid; grid-template-columns: repeat(4, 34px); gap: 4px; }
+.faces button { all: unset; cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); }
+.faces button:hover { border-color: var(--line-strong); background: var(--sunk); }
+.faces button[aria-pressed="true"] { border: 2px solid var(--accent); background: var(--accent-soft); }
+.faces button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.faces canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+#em-icon-thumb { width: 32px; height: 32px; image-rendering: pixelated; }
+
+.icon-src { font-size: 0.82rem; }
+.icon-actions .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+details.emoji-pick { margin-top: 8px; }
+details.emoji-pick summary { cursor: pointer; font-size: 0.82rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.faces { grid-template-columns: repeat(8, 34px); }
+@media (max-width: 1500px) { .faces { grid-template-columns: repeat(4, 34px); } }
+
+/* ---------- item icon ---------- */
+.icon-row { display: flex; gap: 12px; align-items: center; }
+.icon-meta { display: grid; gap: 2px; min-width: 0; }
+.icon-meta b { font-size: 0.9rem; }
+.icon-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.icon-actions .btn { padding: 5px 10px; font-size: 0.82rem; }
+.slot { display: inline-grid; place-items: center; width: 52px; height: 52px; flex: none; background: var(--slot); border-radius: 4px; box-shadow: inset 0 0 0 2px var(--slot-edge); }
+.slot canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+
+dialog.icon-dialog { border: 1px solid var(--line); border-radius: 8px; padding: 0; background: var(--panel); color: var(--ink); width: min(780px, calc(100% - 32px)); max-height: calc(100% - 32px); box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35); }
+dialog.icon-dialog[open] { display: flex; flex-direction: column; }
+dialog.icon-dialog::backdrop { background: rgba(15, 23, 42, 0.55); }
+.dlg-head { padding: 16px 20px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 2px; }
+.dlg-head p { margin: 0; font-size: 0.86rem; }
+.dlg-body { display: grid; grid-template-columns: minmax(0, 384px) minmax(0, 1fr); gap: 22px; padding: 18px 20px; overflow: auto; }
+@media (max-width: 700px) { .dlg-body { grid-template-columns: minmax(0, 1fr); } }
+#icon-grid { display: block; width: 100%; max-width: 384px; aspect-ratio: 1; image-rendering: pixelated; touch-action: none; cursor: crosshair; border: 1px solid var(--line); border-radius: 4px; }
+.tool-col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.mini { font-weight: 800; font-size: 0.8rem; margin: 0 0 6px; }
+.toolset { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.toolset .btn { justify-content: flex-start; }
+.toolset .btn kbd { margin-left: auto; font: 600 0.72rem var(--f-mono); color: inherit; opacity: 0.7; }
+.toolset .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.cur { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+input[type="color"] { width: 44px; height: 32px; border: 1px solid var(--line); border-radius: 4px; padding: 2px; background: var(--panel); cursor: pointer; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(26px, 1fr)); gap: 4px; }
+.swatches button { all: unset; aspect-ratio: 1; border-radius: 4px; background: var(--sw); box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18); cursor: pointer; }
+.swatches button[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.swatches button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+#icon-recent { margin-top: 6px; min-height: 26px; }
+#icon-recent:empty::before { content: "Colors you draw with show up here."; font-size: 0.78rem; color: var(--muted); grid-column: 1 / -1; align-self: center; }
+.previews { display: flex; gap: 18px; align-items: flex-end; }
+.previews figure { margin: 0; display: grid; gap: 4px; justify-items: center; font-size: 0.75rem; color: var(--muted); }
+#icon-prev1 { width: 16px; height: 16px; image-rendering: pixelated; }
+.slot #icon-prev2 { width: 32px; height: 32px; }
+.row-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.row-btns .btn { padding: 6px 10px; font-size: 0.82rem; }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); }
+
+/* ---------- toast ---------- */
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #1d293d; color: #ffffff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); z-index: 10; }
+.toast button { all: unset; cursor: pointer; font-weight: 800; color: var(--cyan); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="topbar">
+ <div class="topbar-inner">
+  <div class="brand">
+    <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+      <rect x="3" y="2" width="10" height="12" fill="var(--book)"/>
+      <rect x="3" y="2" width="2" height="12" fill="var(--book-spine)"/>
+      <rect x="5" y="12" width="8" height="2" fill="var(--page)"/>
+      <rect x="7" y="5" width="4" height="4" fill="var(--gold)"/>
+      <rect x="8" y="6" width="2" height="1" fill="var(--book-spine)"/>
+    </svg>
+    <div>
+      <h1>Cleverlike <span>Emote Tool</span></h1>
+      <p>Blockbench animations in, Minecraft Education emotes out</p>
+    </div>
+  </div>
+  <button class="btn" id="open-addon" type="button">Open an add-on…</button>
+  <input type="file" id="open-addon-file" accept=".mcaddon,.mcpack,.zip" hidden>
+ </div>
+</header>
+
+<main class="workspace">
+  <!-- ======== Left: emotes, then pack settings ======== -->
+  <div class="col col-left">
+    <section class="pane emotes-pane" aria-labelledby="emotes-h">
+      <header><h2 class="label" id="emotes-h">Emotes</h2><span class="muted" id="emote-count" style="font-size:.8rem"></span></header>
+      <div class="scroll">
+        <ul class="emote-list" id="emote-list"></ul>
+        <div class="drop" id="drop">
+          <button class="btn" type="button" id="add-files">Add animation files</button>
+          <input type="file" id="add-file-input" accept=".json,.mcaddon,.mcpack,.zip" multiple hidden>
+          <p>or drop <span class="mono">.animation.json</span> files here. In Blockbench: Animation → Export Animations.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane pack-pane" aria-labelledby="pack-h">
+      <header><h2 class="label" id="pack-h">Pack</h2>
+        <span class="version-box"><span class="pill ok mono" id="version-pill" title="Goes up by one each time you download">v1.0.0</span>
+        <button class="btn" type="button" id="version-up" title="Next version with new pack IDs">Version up</button></span></header>
+      <div class="fields">
+        <p class="pack-id">Pack ID <span class="mono" id="pack-uuid"></span></p>
+        <label class="field"><span>Pack name</span><input type="text" id="pack-name" maxlength="40" autocomplete="off" title="Shown in Minecraft's Behavior Packs list"></label>
+        <label class="field"><span>Item name</span><input type="text" id="item-name" maxlength="32" autocomplete="off" title="The item players use to open the emote menu. Also the menu's title."></label>
+        <div class="field"><span>In-game menu</span>
+          <div class="seg" role="group" aria-label="In-game menu style">
+            <button type="button" id="menu-pixel" aria-pressed="true">Pixel emoji</button>
+            <button type="button" id="menu-classic" aria-pressed="false">Classic</button>
+          </div>
+          <small id="menu-style-help"></small>
+        </div>
+        <div class="field"><span>Item icon</span>
+          <div class="icon-row">
+            <span class="slot"><canvas id="icon-thumb" width="16" height="16" aria-label="Current item icon"></canvas></span>
+            <div class="icon-meta">
+              <b id="icon-kind">Emote Book (default)</b>
+              <div class="icon-actions">
+                <button class="btn" type="button" id="icon-edit">Design icon</button>
+                <button class="btn ghost" type="button" id="icon-default" hidden>Use the book</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ======== Stage: 3D preview ======== -->
+  <section class="stage pane" aria-label="Preview">
+    <div class="stage-wrap" id="stage-wrap">
+      <canvas id="stage" aria-label="3D preview of the selected emote on a player model"></canvas>
+      <div class="stage-title"><strong id="stage-name">No emote selected</strong><span class="pill" id="stage-loop" hidden></span></div>
+      <span class="stage-hint">Drag to turn · scroll to zoom</span>
+    </div>
+    <div class="stripe" aria-hidden="true"></div>
+    <div class="stage-empty" id="stage-empty" hidden>
+      <p class="eyebrow">No emotes yet</p>
+      <h2>Add your first animation</h2>
+      <p>Export it from Blockbench with Animation → Export Animations, then add the <span class="mono">.animation.json</span> file. It will play on this model.</p>
+      <button class="btn primary" type="button" id="stage-add">Add animation files</button>
+    </div>
+    <div class="transport" id="transport">
+      <button class="btn icon" type="button" id="play" aria-label="Pause">❚❚</button>
+      <input type="range" id="scrub" min="0" max="1" step="0.001" value="0" aria-label="Animation time">
+      <span class="time" id="time">0.00 / 0.00 s</span>
+      <button class="btn ghost" type="button" id="reset-view">Reset view</button>
+    </div>
+    <div class="skinbar">
+      <span class="muted">Preview skin</span>
+      <div class="seg" role="group" aria-label="Arm width">
+        <button type="button" id="arms-classic" aria-pressed="true">Classic arms</button>
+        <button type="button" id="arms-slim" aria-pressed="false">Slim arms</button>
+      </div>
+      <button class="btn" type="button" id="skin-upload">Use my skin…</button>
+      <button class="btn ghost" type="button" id="skin-reset" hidden>Default skin</button>
+      <input type="file" id="skin-file" accept="image/png" hidden>
+    </div>
+  </section>
+
+  <!-- ======== Right: selected emote, then download ======== -->
+  <div class="col col-right">
+    <section class="pane inspector" aria-labelledby="insp-h">
+      <header><h2 class="label" id="insp-h">Selected emote</h2></header>
+      <div class="scroll" id="inspector-body"></div>
+    </section>
+
+    <section class="pane export-pane" aria-labelledby="export-h">
+      <header><h2 class="label" id="export-h">Download</h2></header>
+      <div class="export">
+        <ul class="problems" id="problems" hidden></ul>
+        <button class="btn primary big" type="button" id="download">Download add-on</button>
+        <p class="muted" id="export-status" style="margin:0;font-size:.82rem" aria-live="polite"></p>
+        <details class="help" id="install-help">
+          <summary>How to install in Minecraft Education</summary>
+          <ol class="steps">
+            <li><b>Open the downloaded <span class="mono">.mcaddon</span></b> on the computer with Minecraft Education. It imports both packs.</li>
+            <li>Create or edit a world. Under <b>Behavior Packs</b>, activate <b id="help-bp">My Emotes BP</b>. The resource pack is added with it.</li>
+            <li>Join the world. Everyone gets the <b id="help-item">Emote Book</b> the first time they join. With cheats on, <span class="mono" id="help-give">/function …/give</span> hands out another.</li>
+            <li>Updating? Download again here; the version goes up by one so Minecraft replaces the old copy.</li>
+          </ol>
+        </details>
+      </div>
+    </section>
+  </div>
+</main>
+
+<dialog class="icon-dialog" id="icon-dialog" aria-labelledby="icon-dialog-h">
+  <header class="dlg-head">
+    <h2 class="label" id="icon-dialog-h">Design the item icon</h2>
+    <p class="muted">Draw on the 16 × 16 grid. Right-click (or the eraser) clears a pixel; checkered squares stay see-through.</p>
+  </header>
+  <div class="dlg-body">
+    <div><canvas id="icon-grid" aria-label="16 by 16 pixel drawing grid"></canvas></div>
+    <div class="tool-col">
+      <div>
+        <p class="mini">Tools</p>
+        <div class="toolset" id="icon-tools" role="group" aria-label="Drawing tools">
+          <button class="btn" type="button" data-tool="pencil" aria-pressed="true">Pencil <kbd>B</kbd></button>
+          <button class="btn" type="button" data-tool="eraser" aria-pressed="false">Eraser <kbd>E</kbd></button>
+          <button class="btn" type="button" data-tool="fill" aria-pressed="false">Fill <kbd>G</kbd></button>
+          <button class="btn" type="button" data-tool="picker" aria-pressed="false">Pick color <kbd>I</kbd></button>
+        </div>
+      </div>
+      <div>
+        <p class="mini">Color</p>
+        <div class="cur"><input type="color" id="icon-color" aria-label="Custom color"><span class="mono" id="icon-color-hex"></span></div>
+        <div class="swatches" id="icon-palette"></div>
+        <div class="swatches" id="icon-recent" aria-label="Recent colors"></div>
+      </div>
+      <div>
+        <p class="mini">Preview</p>
+        <div class="previews">
+          <figure><span class="slot"><canvas id="icon-prev2"></canvas></span><figcaption id="icon-prev2-cap">In the hotbar</figcaption></figure>
+          <figure><canvas id="icon-prev1"></canvas><figcaption>Actual size</figcaption></figure>
+        </div>
+      </div>
+      <div class="row-btns">
+        <button class="btn" type="button" id="icon-undo">Undo</button>
+        <button class="btn" type="button" id="icon-clear">Clear</button>
+        <button class="btn" type="button" id="icon-book">Start from the book</button>
+        <button class="btn" type="button" id="icon-import">Import PNG…</button>
+        <input type="file" id="icon-import-file" accept="image/png,image/gif,image/webp" hidden>
+      </div>
+    </div>
+  </div>
+  <footer class="dlg-foot">
+    <button class="btn" type="button" id="icon-cancel">Cancel</button>
+    <button class="btn primary" type="button" id="icon-save">Save icon</button>
+  </footer>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden><span id="toast-msg"></span><button type="button" id="toast-action" hidden></button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+window.EMOTE_SCRIPT_TEMPLATE = "import { world, system, ItemStack } from \"@minecraft/server\";\nimport { ActionFormData } from \"@minecraft/server-ui\";\n\nconst ITEM_ID = \"__ITEM__\";\nconst CONTROLLER = \"__CTRL__\";\nconst EMOTES = __EMOTES__;\n// Menu look: title (with the hidden style marker when the pixel menu is on), labels and icons\nconst MENU = __MENU__;\n\nconst KEEP_VIEW_TAG = \"emote_keep_view\"; // player chose \"keep my view\" (they play in 3rd person)\nconst EASE_TIME = 0.6;                   // seconds for camera ease in / out\nconst CAM_DISTANCE = 3.5;                // blocks behind the player\nconst CAM_HEIGHT = 0.3;                  // blocks above eye level\nconst MOVE_GRACE_TICKS = 10;\nconst MOVE_THRESHOLD = 0.03;\nconst active = new Map();                // player.id -> session\nlet nextToken = 1;\n\n// ---------- helpers ----------\nconst f = (n) => n.toFixed(3);\nfunction run(player, cmd) {\n  try { player.runCommand(cmd); } catch { try { player.runCommandAsync(cmd); } catch {} }\n}\nfunction eyeCamera(player, easeSec, lead = { x: 0, y: 0, z: 0 }) {\n  // Camera sitting exactly where the player's eyes are, looking where they look\n  const h = player.getHeadLocation(), r = player.getRotation();\n  const pos = `${f(h.x + lead.x)} ${f(h.y + lead.y)} ${f(h.z + lead.z)}`;\n  const ease = easeSec > 0 ? `ease ${f(easeSec)} in_out_sine ` : \"\";\n  run(player, `camera @s set minecraft:free ${ease}pos ${pos} rot ${f(r.x)} ${f(r.y)}`);\n}\nfunction behindCamera(player, easeSec) {\n  const h = player.getHeadLocation(), v = player.getViewDirection();\n  const len = Math.hypot(v.x, v.z) || 1;\n  const back = { x: -v.x / len, y: 0, z: -v.z / len };\n  let dist = CAM_DISTANCE;\n  try { // pull the camera in if there's a wall behind the player\n    const hit = player.dimension.getBlockFromRay(h, back, { maxDistance: CAM_DISTANCE + 0.5 });\n    if (hit) {\n      const b = hit.block.location;\n      dist = Math.max(1, Math.hypot(b.x + 0.5 - h.x, b.z + 0.5 - h.z) - 0.8);\n    }\n  } catch {}\n  const pos = `${f(h.x + back.x * dist)} ${f(h.y + CAM_HEIGHT)} ${f(h.z + back.z * dist)}`;\n  const l = player.location;\n  run(player, `camera @s set minecraft:free ease ${f(easeSec)} in_out_sine pos ${pos} facing ${f(l.x)} ${f(l.y + 1.1)} ${f(l.z)}`);\n}\nfunction clearCamera(player) {\n  try { player.camera.clear(); } catch { run(player, \"camera @s clear\"); }\n}\nfunction playAnim(player, animId, stop) {\n  try {\n    player.playAnimation(animId, { blendOutTime: 0.2, stopExpression: stop, controller: CONTROLLER });\n  } catch {\n    run(player, `playanimation @s ${animId} a 0.2 \"${stop}\" ${CONTROLLER}`);\n  }\n}\n\n// ---------- emote lifecycle ----------\nfunction startEmote(player, e) {\n  const prev = active.get(player.id);\n  const useCam = !player.hasTag(KEEP_VIEW_TAG);\n  // Short one-shots get proportionally shorter eases so they fit inside the animation\n  const ease = e.loop ? EASE_TIME : Math.min(EASE_TIME, e.length * 0.35);\n  const s = {\n    token: nextToken++, player, loop: e.loop, cam: useCam, ease,\n    startTick: system.currentTick,\n    endTick: e.loop ? Infinity : system.currentTick + Math.ceil(e.length * 20),\n    ending: false,\n  };\n  active.set(player.id, s);\n  playAnim(player, e.anim, e.loop ? \"q.is_moving\" : \"q.any_animation_finished\");\n  if (!useCam) return;\n\n  if (prev?.cam && !prev.ending) {\n    behindCamera(player, 0.3);           // already out of body: just re-aim, no new ease from the eyes\n  } else {\n    eyeCamera(player, 0);                // detach the camera exactly at the eyes (no visible jump)...\n    system.runTimeout(() => {            // ...then glide back on the next tick\n      if (active.get(player.id)?.token === s.token) behindCamera(player, ease);\n    }, 1);\n  }\n}\n\nfunction endEmote(player, { playStop = false, walking = false } = {}) {\n  const s = active.get(player.id);\n  if (!s || s.ending) return;\n  s.ending = true;\n  if (playStop) playAnim(player, \"__STOP_ANIM__\", \"q.any_animation_finished\");\n  if (!s.cam) { active.delete(player.id); return; }\n\n  // If they're walking, aim where their head will be when the glide finishes\n  const easeTicks = Math.ceil(s.ease * 20);\n  let lead = { x: 0, y: 0, z: 0 };\n  if (walking) { const v = player.getVelocity(); lead = { x: v.x * easeTicks, y: 0, z: v.z * easeTicks }; }\n  eyeCamera(player, s.ease, lead);\n  system.runTimeout(() => {\n    if (active.get(player.id)?.token !== s.token) return;   // a new emote started meanwhile\n    active.delete(player.id);\n    clearCamera(player);                                     // back to their own first-person view\n  }, easeTicks + 1);\n}\n\nsystem.runInterval(() => {\n  const now = system.currentTick;\n  for (const [id, s] of active) {\n    const p = s.player;\n    try { p.location; } catch { active.delete(id); continue; }\n    if (s.ending) continue;\n    if (s.loop) {\n      if (now - s.startTick < MOVE_GRACE_TICKS) continue;\n      const v = p.getVelocity();\n      if (Math.hypot(v.x, v.z) > MOVE_THRESHOLD) endEmote(p, { walking: true });\n    } else if (now >= s.endTick - (s.cam ? Math.ceil(s.ease * 20) : 0)) {\n      endEmote(p);  // start gliding back so the camera lands as the animation finishes\n    }\n  }\n}, 1);\n\n// ---------- menu ----------\nfunction openMenu(player, attempt = 0) {\n  const keep = player.hasTag(KEEP_VIEW_TAG);\n  const form = new ActionFormData().title(MENU.title).body(\"Pick an emote\");\n  const button = (label, icon) => (icon ? form.button(label, icon) : form.button(label));\n  for (const e of EMOTES) button(e.name, e.icon);\n  button(MENU.stop.label, MENU.stop.icon);\n  const cam = keep ? MENU.camMine : MENU.camThird;\n  button(cam.label, cam.icon);\n\n  form.show(player).then((res) => {\n    if (res.canceled) {\n      if (res.cancelationReason === \"UserBusy\" && attempt < 10) system.runTimeout(() => openMenu(player, attempt + 1), 5);\n      return;\n    }\n    const sel = res.selection;\n    if (sel === EMOTES.length) { endEmote(player, { playStop: true }); return; }\n    if (sel === EMOTES.length + 1) {\n      if (keep) player.removeTag(KEEP_VIEW_TAG); else player.addTag(KEEP_VIEW_TAG);\n      openMenu(player);\n      return;\n    }\n    startEmote(player, EMOTES[sel]);\n  }).catch((err) => player.sendMessage(`§c[Emotes] Menu error: ${err}`));\n}\n\nworld.afterEvents.itemUse.subscribe((ev) => {\n  if (ev.itemStack?.typeId === ITEM_ID) openMenu(ev.source);\n});\n\nworld.afterEvents.playerSpawn.subscribe((ev) => {\n  const p = ev.player;\n  active.delete(p.id);\n  clearCamera(p);\n  if (!ev.initialSpawn) return;\n  if (!p.hasTag(\"__GIVEN_TAG__\")) {\n    p.getComponent(\"minecraft:inventory\")?.container?.addItem(new ItemStack(ITEM_ID, 1));\n    p.addTag(\"__GIVEN_TAG__\");\n  }\n});\n";
+
+/* Cleverlike Emote Tool — animation engine
+ * Molang evaluator, Bedrock keyframe sampling, and player bone matching.
+ * Pure functions only (no DOM), so it can be tested in Node. */
+(function (G) {
+  "use strict";
+
+  // ---------------------------------------------------------------- Molang
+  const DEG = Math.PI / 180;
+  const MATH = {
+    abs: Math.abs, sin: (a) => Math.sin(a * DEG), cos: (a) => Math.cos(a * DEG),
+    asin: (a) => Math.asin(a) / DEG, acos: (a) => Math.acos(a) / DEG, atan: (a) => Math.atan(a) / DEG,
+    atan2: (y, x) => Math.atan2(y, x) / DEG,
+    clamp: (v, lo, hi) => Math.min(Math.max(v, lo), hi),
+    lerp: (a, b, t) => a + (b - a) * t,
+    lerprotate: (a, b, t) => { let d = ((b - a) % 360 + 540) % 360 - 180; return a + d * t; },
+    min_angle: (a) => ((a % 360) + 540) % 360 - 180,
+    pow: Math.pow, sqrt: Math.sqrt, exp: Math.exp, ln: Math.log,
+    floor: Math.floor, ceil: Math.ceil, round: Math.round, trunc: Math.trunc,
+    mod: (a, b) => a % b, min: Math.min, max: Math.max, sign: (a) => (a >= 0 ? 1 : -1),
+    random: (lo = 0, hi = 1) => lo + Math.random() * (hi - lo),
+    random_integer: (lo, hi) => Math.floor(lo + Math.random() * (hi - lo + 1)),
+    die_roll: (n, lo, hi) => { let s = 0; for (let i = 0; i < n; i++) s += lo + Math.random() * (hi - lo); return s; },
+    die_roll_integer: (n, lo, hi) => { let s = 0; for (let i = 0; i < n; i++) s += Math.floor(lo + Math.random() * (hi - lo + 1)); return s; },
+    hermite_blend: (t) => 3 * t * t - 2 * t * t * t,
+  };
+  const MATH_CONST = { pi: Math.PI };
+
+  const TOKEN = /\s*(\d+\.\d*|\.\d+|\d+|[A-Za-z_][A-Za-z0-9_.]*|&&|\|\||==|!=|<=|>=|\?\?|->|[-+*/()?:<>!,;=\[\]{}'])/y;
+
+  function tokenize(src) {
+    const out = []; TOKEN.lastIndex = 0; let m;
+    const s = src.trim();
+    while (TOKEN.lastIndex < s.length) {
+      const at = TOKEN.lastIndex;
+      m = TOKEN.exec(s);
+      if (!m) throw new Error(`Unexpected character "${s[at]}"`);
+      out.push(m[1]);
+      if (/^\s*$/.test(s.slice(TOKEN.lastIndex))) break;
+    }
+    return out;
+  }
+
+  function normId(id) {
+    id = id.toLowerCase();
+    return id.replace(/^query\./, "q.").replace(/^variable\./, "v.").replace(/^temp\./, "t.").replace(/^context\./, "c.");
+  }
+
+  // Pratt parser → closure taking ctx {q:{}, v:{}, t:{}}
+  function parse(tokens) {
+    let i = 0;
+    const peek = () => tokens[i], next = () => tokens[i++];
+    const expect = (t) => { if (next() !== t) throw new Error(`Expected "${t}"`); };
+    const BIN = {
+      "??": [1, (a, b) => a ?? b], "||": [2, (a, b) => (a || b ? 1 : 0)], "&&": [3, (a, b) => (a && b ? 1 : 0)],
+      "==": [4, (a, b) => (a == b ? 1 : 0)], "!=": [4, (a, b) => (a != b ? 1 : 0)],
+      "<": [5, (a, b) => (a < b ? 1 : 0)], ">": [5, (a, b) => (a > b ? 1 : 0)],
+      "<=": [5, (a, b) => (a <= b ? 1 : 0)], ">=": [5, (a, b) => (a >= b ? 1 : 0)],
+      "+": [6, (a, b) => a + b], "-": [6, (a, b) => a - b],
+      "*": [7, (a, b) => a * b], "/": [7, (a, b) => (b === 0 ? 0 : a / b)],
+    };
+    function primary() {
+      const t = next();
+      if (t === undefined) throw new Error("Unexpected end of expression");
+      if (/^[\d.]/.test(t)) { const n = parseFloat(t); return () => n; }
+      if (t === "(") { const e = expr(0); expect(")"); return e; }
+      if (t === "-") { const e = unary(); return (c) => -e(c); }
+      if (t === "!") { const e = unary(); return (c) => (e(c) ? 0 : 1); }
+      if (t === "'") { // string literal: skip to closing quote, value 0
+        while (i < tokens.length && next() !== "'"); return () => 0;
+      }
+      if (/^[A-Za-z_]/.test(t)) {
+        const id = normId(t);
+        if (id === "true") return () => 1;
+        if (id === "false") return () => 0;
+        if (id === "return") { const e = expr(0); return (c) => { c.__ret = e(c); return c.__ret; }; }
+        let args = null;
+        if (peek() === "(") {
+          next(); args = [];
+          if (peek() !== ")") { do { args.push(expr(0)); } while (peek() === "," && next()); }
+          expect(")");
+        }
+        const [ns, ...rest] = id.split(".");
+        const name = rest.join(".");
+        if (ns === "math") {
+          if (!args && name in MATH_CONST) { const k = MATH_CONST[name]; return () => k; }
+          const fn = MATH[name];
+          if (!fn) throw new Error(`Unknown function math.${name}`);
+          const a = args || [];
+          return (c) => fn(...a.map((f) => f(c)));
+        }
+        if (ns === "q" || ns === "c") return (c) => { const v = c.q[name]; return typeof v === "function" ? v(...(args || []).map((f) => f(c))) : (v ?? 0); };
+        if (ns === "v" || ns === "t") {
+          const bag = ns;
+          if (peek() === "=" ) { next(); const e = expr(0); return (c) => (c[bag][name] = e(c)); }
+          return (c) => c[bag][name] ?? 0;
+        }
+        return () => 0; // unknown identifier
+      }
+      throw new Error(`Unexpected "${t}"`);
+    }
+    function unary() { return primary(); }
+    function expr(minPrec) {
+      let left = unary();
+      for (;;) {
+        const op = peek();
+        if (op === "?" && minPrec <= 0) {
+          next();
+          const a = expr(0);
+          if (peek() === ":") { next(); const b = expr(0); const cnd = left; left = (c) => (cnd(c) ? a(c) : b(c)); }
+          else { const cnd = left; left = (c) => (cnd(c) ? a(c) : 0); }
+          continue;
+        }
+        const b = BIN[op];
+        if (!b || b[0] < minPrec) break;
+        next();
+        const right = expr(b[0] + 1);
+        const l = left, f = b[1];
+        left = (c) => f(l(c), right(c));
+      }
+      return left;
+    }
+    // statements separated by ;
+    const stmts = [];
+    while (i < tokens.length) {
+      if (peek() === ";") { next(); continue; }
+      stmts.push(expr(0));
+      if (i < tokens.length && peek() !== ";") throw new Error(`Unexpected "${peek()}"`);
+    }
+    if (stmts.length === 1) return stmts[0];
+    return (c) => { c.__ret = undefined; let last = 0; for (const s of stmts) { last = s(c); if (c.__ret !== undefined) return c.__ret; } return last; };
+  }
+
+  const cache = new Map();
+  /** Compile a Molang value (number or string). Returns {fn, error}. */
+  function compile(src) {
+    if (typeof src === "number") return { fn: () => src, error: null };
+    if (typeof src === "boolean") return { fn: () => (src ? 1 : 0), error: null };
+    const key = String(src);
+    if (cache.has(key)) return cache.get(key);
+    let out;
+    try { out = { fn: parse(tokenize(key)), error: null }; }
+    catch (e) { out = { fn: () => 0, error: `${e.message} in "${key}"` }; }
+    cache.set(key, out);
+    return out;
+  }
+  function evalMolang(src, ctx) {
+    const v = compile(src).fn(ctx);
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  // ------------------------------------------------------- Keyframe sampling
+  function vec(v) {
+    if (Array.isArray(v)) return [v[0] ?? 0, v[1] ?? 0, v[2] ?? 0];
+    return [v, v, v]; // single number / expression applies to all axes
+  }
+  function isKeyframed(ch) {
+    return ch && typeof ch === "object" && !Array.isArray(ch);
+  }
+  function parseKeys(ch) {
+    const keys = Object.keys(ch).map((k) => {
+      const raw = ch[k];
+      let pre, post, mode = "linear";
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        post = raw.post ?? raw.pre; pre = raw.pre ?? raw.post; mode = raw.lerp_mode || "linear";
+      } else { pre = post = raw; }
+      return { t: parseFloat(k), pre: vec(pre), post: vec(post), mode };
+    }).filter((k) => Number.isFinite(k.t));
+    keys.sort((a, b) => a.t - b.t);
+    return keys;
+  }
+  const keyCache = new WeakMap();
+  function keysFor(ch) { let k = keyCache.get(ch); if (!k) { k = parseKeys(ch); keyCache.set(ch, k); } return k; }
+
+  function catmull(p0, p1, p2, p3, t) {
+    const t2 = t * t, t3 = t2 * t;
+    return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+  }
+
+  /** Sample one channel (rotation/position/scale) at time t → [x,y,z] numbers */
+  function sampleChannel(ch, t, ctx) {
+    const ev = (v) => vec(v).map((x) => evalMolang(x, ctx));
+    if (!isKeyframed(ch)) return ev(ch);
+    const k = keysFor(ch);
+    if (!k.length) return [0, 0, 0];
+    if (t <= k[0].t) return k[0].pre.map((x) => evalMolang(x, ctx));
+    const last = k[k.length - 1];
+    if (t >= last.t) return last.post.map((x) => evalMolang(x, ctx));
+    let i = 0; while (k[i + 1].t < t) i++;
+    const a = k[i], b = k[i + 1];
+    const u = (t - a.t) / (b.t - a.t || 1);
+    const A = a.post.map((x) => evalMolang(x, ctx)), B = b.pre.map((x) => evalMolang(x, ctx));
+    if (a.mode === "step") return A;
+    if (a.mode === "catmullrom" || b.mode === "catmullrom") {
+      const P0 = (k[i - 1] ? k[i - 1].post : a.post).map((x) => evalMolang(x, ctx));
+      const P3 = (k[i + 2] ? k[i + 2].pre : b.pre).map((x) => evalMolang(x, ctx));
+      return [0, 1, 2].map((j) => catmull(P0[j], A[j], B[j], P3[j], u));
+    }
+    return [0, 1, 2].map((j) => A[j] + (B[j] - A[j]) * u);
+  }
+
+  /** Last keyframe time across all bones/channels */
+  function lastKeyTime(anim) {
+    let m = 0;
+    for (const b of Object.values(anim.bones || {})) {
+      for (const ch of ["rotation", "position", "scale"]) {
+        if (isKeyframed(b[ch])) for (const k of keysFor(b[ch])) m = Math.max(m, k.t);
+      }
+    }
+    return m;
+  }
+  function animLength(anim) {
+    const L = Number(anim.animation_length);
+    return L > 0 ? L : Math.max(lastKeyTime(anim), 0.05);
+  }
+
+  /** Collect every Molang error inside an animation (for the warnings list) */
+  function molangErrors(anim) {
+    const errs = new Set();
+    const visit = (v) => {
+      if (typeof v === "string") { const c = compile(v); if (c.error) errs.add(c.error); }
+      else if (Array.isArray(v)) v.forEach(visit);
+      else if (v && typeof v === "object") Object.values(v).forEach(visit);
+    };
+    for (const b of Object.values(anim.bones || {})) for (const ch of ["rotation", "position", "scale"]) if (b[ch] !== undefined) visit(b[ch]);
+    return [...errs];
+  }
+
+  /** Pose for every source bone at time t → {boneName: {rot, pos, scale}} */
+  function samplePose(anim, t, ctx) {
+    const out = {};
+    for (const [name, b] of Object.entries(anim.bones || {})) {
+      out[name] = {
+        rot: b.rotation !== undefined ? sampleChannel(b.rotation, t, ctx) : null,
+        pos: b.position !== undefined ? sampleChannel(b.position, t, ctx) : null,
+        scale: b.scale !== undefined ? sampleChannel(b.scale, t, ctx) : null,
+      };
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------- Bone matching
+  const PLAYER_BONES = ["root", "waist", "body", "head", "hat", "jacket", "cape",
+    "rightArm", "leftArm", "rightSleeve", "leftSleeve", "rightItem", "leftItem",
+    "rightLeg", "leftLeg", "rightPants", "leftPants"];
+  const BY_KEY = Object.fromEntries(PLAYER_BONES.map((b) => [b.toLowerCase(), b]));
+  // Common names from Blockbench's skin template and other rigs
+  const ALIASES = {
+    torso: "body", chest: "body", hip: "waist", hips: "waist", pelvis: "waist",
+    hatlayer: "hat", headlayer: "hat", headwear: "hat", helmet: "hat",
+    bodylayer: "jacket", torsolayer: "jacket",
+    rightarmlayer: "rightSleeve", leftarmlayer: "leftSleeve",
+    rightleglayer: "rightPants", leftleglayer: "leftPants",
+  };
+
+  function suggestBone(name) {
+    let k = String(name).toLowerCase().replace(/[\s_\-.]/g, "");
+    if (BY_KEY[k]) return BY_KEY[k];
+    if (ALIASES[k]) return ALIASES[k];
+    // "armright", "arm_r", "r_arm", "rarm"
+    const side = /right|(^|[^a-z])r($|[^a-z])/.test(String(name).toLowerCase().replace(/[\s_\-.]/g, " ")) || /^r(arm|leg)|(arm|leg)r$/.test(k) ? "right"
+      : /left|(^|[^a-z])l($|[^a-z])/.test(String(name).toLowerCase().replace(/[\s_\-.]/g, " ")) || /^l(arm|leg)|(arm|leg)l$/.test(k) ? "left" : null;
+    const layer = /layer|sleeve|pants|outer/.test(k);
+    for (const part of ["arm", "leg"]) {
+      if (k.includes(part) && side) {
+        if (layer) return side + (part === "arm" ? "Sleeve" : "Pants");
+        return side + part[0].toUpperCase() + part.slice(1);
+      }
+    }
+    return null;
+  }
+
+  /** Default mapping for an animation's bones → {src: target|null} */
+  function autoMap(anim) {
+    const map = {};
+    for (const name of Object.keys(anim.bones || {})) map[name] = suggestBone(name);
+    return map;
+  }
+
+  // ---------------------------------------------------------------- Helpers
+  function slugify(s) {
+    return String(s).toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 32) || "emote";
+  }
+  function prettyName(animId) {
+    const last = String(animId).split(".").pop() || "Emote";
+    return last.replace(/[_-]+/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
+  }
+  /** Read a Bedrock .animation.json (tolerates comments / trailing commas) */
+  function parseAnimationFile(text) {
+    let json;
+    try { json = JSON.parse(text); }
+    catch {
+      const cleaned = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'])\/\/.*$/gm, "$1").replace(/,(\s*[}\]])/g, "$1");
+      json = JSON.parse(cleaned);
+    }
+    if (!json || typeof json.animations !== "object") throw new Error("This file has no \"animations\" section. Export it from Blockbench with Animation → Export Animations.");
+    return Object.entries(json.animations).map(([id, anim]) => ({ id, anim }));
+  }
+
+  G.EmoteEngine = { compile, evalMolang, sampleChannel, samplePose, animLength, lastKeyTime, molangErrors,
+    PLAYER_BONES, suggestBone, autoMap, slugify, prettyName, parseAnimationFile };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Generated by art/gen_ui_art.py — pixel art for the emoji emote menu. */
+(function (G) {
+  G.EmoteUIArt = {"textures":{"panel":"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAhElEQVR4nGNkgAItKYH/DFQE1559YGRgYGBggRn+TL+HmuYzaDGU/L/27AMjI8xweTUdqhl+59g6BlYRNQapiyUQH8DA69cvqGYJDKBY8O39G6pbwER1E0ctGLVg1IJRC0YtGIoWwCucO8fW0cQCRgYG2lT6UhdLGK49+8DICBOgVbMFADERJaVvx8UZAAAAAElFTkSuQmCC","stripe":"iVBORw0KGgoAAAANSUhEUgAAACgAAAADCAYAAADhlU2YAAAAI0lEQVR4nGMU91/0n4HG4HlePE6599l1ePUyUdsx1AaD3oEA6VcFmZAs5BoAAAAASUVORK5CYII=","tile":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAxElEQVR4nO3WIROCMBjG8WeehTYrNo60RQKfhTUr1c+xSl2Tz0IwYvJsWLUZZ/De6SC6eYb9C7f3OH430sswS+TczmffdLre2efZHQgap1tID3K7WcIi5zZ2dKG1Ux+X1zMr/HPgmMi5Hc/H9yQromGyrLBaTCNh1BKMXAITmMAEJjCB/wgarSDLKjokywpGq9/fkAHA0Ld2tz8AALz9JkD094xWqJuOua3NaOW9ECr6LuWW06Fvg27c8+qmYx4YCyaIegIDb5MW3p/c+gAAAABJRU5ErkJggg==","tile_hover":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAA0ElEQVR4nGNkQANaUgL/0cUoAdeefWBE5sM5MIuu3pxBTfsYtNUzUCxmhFlGbYuwWXzt2QdGFrjI230QWn4mA8OXlQg+lQGjlpTA/6vHwhAiwk40s0zbahUDE4YojSyDAUwLaQxGLRy1cNTCUQtHLRy1cDBaOL+Ai0HbahXNLdK2WsUwv4CL/j5kZGBgYDjZJfU/ccI3BgYGBgaU9g0VACz05hdwMZiXPUO02uYXcKEooBaAmQsD8IbwyS4pqra40YF52TNEQxgZUNtimEUwAABrkTlwigwqRgAAAABJRU5ErkJggg==","tile_pressed":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAoElEQVR4nO3WsQ3CMBAF0H8RdZQ6I9hkASbwBKzAbkzAAjABuT6Na4sFQoGcxDjlXar7jeXfPNnVBw4O/Reu72ZJgGMqjOWSofF1lfTgL/cCpoxJQ3swx0Snpfm8f+fwBKbbehcOub6bx4dbm/ashvnAaKpWCcupQeUYaKCBBhpooIFAwzGRD6wO+cDgmOjwF9a7dDuoBJJ/r9il22gv7y+VuTL+FOzkNAAAAABJRU5ErkJggg==","close":"iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAXklEQVR4nGNkYGBg0JIS+M+AA1x79oGRRUtK4P9D6TRcahi0GGb9Z4JxvpzqRJFE5sMV8ZiVwyW+nOpk4DErx1SErBBZAYYimAJ0q5nQFaBbjeEmdKthgJGBgXA4AQCbRyeLX4vyAwAAAABJRU5ErkJggg==","close_hover":"iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAXUlEQVR4nGNkYGBg0JIS+M+AA1x79oGRRUtK4P9hvnxcahhsGSb+Z4JxhK43oEgi8+GK3mk2wCWErjcwvNPEoghZIbICDEUwBehWM6ErQLcaw03oVsMAIwMD4XACAF4fJ3P8P8vvAAAAAElFTkSuQmCC","badge":"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR4nGNgoBAwYhPUkhL4j0382rMPGOpRBGAar17LQgg+OgBnantcwzAIztCSEviPohFNMzLQ9rgGN4QJqwKtaRiaYbajAyYU2x8dwGkrMri6QwvuXYQLkDRe3aGFVRNOF1ACWNAFooOw+xUGZndx4Tdg6TotBgbdo1g1f1svTdgFDAwMDNGqggwMDAwMfTpRDAwMDAxFV5ZhtZ2BAT0dIAUUuleQNZvmfIOnA6wuwGXbkxuY6rAm5dNTsGsOnPKNgYEBR1LGZhA6wJaZKAYAJm1OR501m/oAAAAASUVORK5CYII="},"faces":{"smile":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"grin":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#e8506a","#e8506a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wink":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#e8506a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"hearts":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#e23a4a","#fff07a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"cool":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"laugh":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#e8506a","#e8506a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wow":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#8a3418","#8a3418","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"silly":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#c83a54","#e8506a","#2a1a10","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#e8506a","#e8506a","#2a1a10","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","#2a1a10","#2a1a10","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""]},"system":{"stop":["","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","",""],"cam_third":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#2a1a10","#2a1a10","#2a1a10","#c4cee2","#c4cee2","#febd01","#c4cee2","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#bfe3ff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#bfe3ff","#bfe3ff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2a1a10","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"cam_mine":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","#2a1a10","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#2a1a10","","","#2a1a10","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#2a1a10","#2a1a10","#2a1a10","#a8e6b2","#a8e6b2","#febd01","#a8e6b2","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#bfe3ff","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#bfe3ff","#bfe3ff","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2a1a10","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]}};
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Cleverlike Emote Tool — JSON UI for the pixel-emoji emote menu.
+ * The add-on's script puts MENU_FLAG at the start of the form title. Only forms with that
+ * marker get this layout; every other script form in the world keeps Minecraft's normal look. */
+(function (G) {
+  "use strict";
+  // Formatting codes render as nothing; §r resets so the visible title keeps its own colour
+  const MENU_FLAG = "§e§m§o§t§r";
+
+  function menuUi(pid) {
+    const ns = `emote_menu_${pid}`, tex = `textures/ui/emote_${pid}`;
+    const coll = (name, override) => ({ binding_name: name, ...(override ? { binding_name_override: override } : {}), binding_type: "collection", binding_collection_name: "form_buttons" });
+    const has = `(not ((#title_text - '${MENU_FLAG}') = #title_text))`;
+    const hasNot = `((#title_text - '${MENU_FLAG}') = #title_text)`;
+
+    // Overrides the vanilla long form: plain forms render exactly as before, flagged forms get ours
+    const serverForm = {
+      namespace: "server_form",
+      long_form: {
+        type: "panel", size: ["100%", "100%"],
+        controls: [
+          { "default_long_form@common_dialogs.main_panel_no_buttons": {
+            $title_panel: "common_dialogs.standard_title_label", $title_size: ["100% - 14px", 10], size: [225, 200],
+            $text_name: "#title_text", $title_text_binding_type: "none", $child_control: "server_form.long_form_panel", layer: 2,
+            bindings: [{ binding_name: "#title_text" }, { binding_type: "view", source_property_name: hasNot, target_property_name: "#visible" }] } },
+          { [`emote_menu@${ns}.main`]: {
+            bindings: [{ binding_name: "#title_text" }, { binding_type: "view", source_property_name: has, target_property_name: "#visible" }] } },
+        ],
+      },
+    };
+
+    const face = (state, iconY, labelY) => ({
+      type: "image", texture: `${tex}/${state}`, size: ["100%", "100%"], layer: 1,
+      controls: [
+        { icon: { type: "image", size: [32, 32], anchor_from: "top_middle", anchor_to: "top_middle", offset: [0, iconY], layer: 2,
+          bindings: [coll("#form_button_texture", "#texture"), coll("#form_button_texture_file_system", "#texture_file_system")] } },
+        { label: { type: "label", text: "#form_button_text", size: ["100% - 6px", 10], anchor_from: "bottom_middle", anchor_to: "bottom_middle",
+          offset: [0, labelY], text_alignment: "center", font_scale_factor: 0.8, color: [0.23, 0.14, 0.07], layer: 2,
+          bindings: [coll("#form_button_text")] } },
+      ],
+    });
+
+    const menu = {
+      namespace: ns,
+      main: { type: "panel", size: ["100%", "100%"], controls: [{ [`window@${ns}.window`]: {} }] },
+      window: { type: "image", texture: `${tex}/panel`, size: [200, "100%c"], layer: 2, controls: [{ [`content@${ns}.content`]: {} }] },
+      content: {
+        type: "stack_panel", orientation: "vertical", size: ["100%", "100%c"],
+        controls: [
+          { pad_top: { type: "panel", size: ["100%", 6] } },
+          { [`header@${ns}.header`]: {} },
+          { grid_area: { type: "panel", size: ["100%", "100%c"], controls: [{ [`grid@${ns}.grid`]: {} }] } },
+          { pad_bottom: { type: "panel", size: ["100%", 14], controls: [
+            { stripe: { type: "image", texture: `${tex}/stripe`, size: ["100% - 12px", 3], anchor_from: "bottom_middle", anchor_to: "bottom_middle", offset: [0, -5], layer: 3 } }] } },
+        ],
+      },
+      header: {
+        type: "panel", size: ["100%", 20],
+        controls: [
+          { title_row: { type: "stack_panel", orientation: "horizontal", size: ["100%c", 12], anchor_from: "center", anchor_to: "center",
+            controls: [
+              { badge: { type: "image", texture: `${tex}/badge`, size: [12, 12], layer: 3 } },
+              { gap: { type: "panel", size: [5, 12] } },
+              { title: { type: "label", text: "#title_text", size: ["default", 12], color: [1.0, 0.74, 0.0], shadow: true, layer: 3,
+                bindings: [{ binding_name: "#title_text" }] } },
+            ] } },
+          { [`close@${ns}.close_button`]: { anchor_from: "right_middle", anchor_to: "right_middle", offset: [-8, 0] } },
+        ],
+      },
+      grid: {
+        type: "grid", size: [180, "default"], anchor_from: "top_middle", anchor_to: "top_middle",
+        grid_item_template: `${ns}.cell`, grid_rescaling_type: "horizontal", collection_name: "form_buttons",
+        bindings: [{ binding_name: "#form_button_length", binding_name_override: "#maximum_grid_items" }],
+      },
+      cell: { type: "panel", size: [60, 60], controls: [{ [`tile@${ns}.tile`]: {} }] },
+      "tile@common.button": {
+        size: [56, 56], anchor_from: "center", anchor_to: "center", $pressed_button_name: "button.form_button_click",
+        controls: [
+          { default: face("tile", 6, -10) },
+          { hover: face("tile_hover", 6, -10) },
+          { pressed: face("tile_pressed", 8, -8) },
+        ],
+        bindings: [{ binding_type: "collection_details", binding_collection_name: "form_buttons" }],
+      },
+      "close_button@common.button": {
+        size: [18, 18], $pressed_button_name: "button.menu_exit",
+        controls: [
+          { default: { type: "image", texture: `${tex}/close`, size: ["100%", "100%"], layer: 3 } },
+          { hover: { type: "image", texture: `${tex}/close_hover`, size: ["100%", "100%"], layer: 3 } },
+          { pressed: { type: "image", texture: `${tex}/close_hover`, size: ["100%", "100%"], offset: [0, 1], layer: 3 } },
+        ],
+      },
+    };
+    return { serverForm, menu, uiDefs: { ui_defs: [`ui/emote_menu_${pid}.json`] } };
+  }
+
+  G.EmoteMenuUI = { MENU_FLAG, menuUi };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Cleverlike Emote Tool — add-on packager
+ * Turns a project into a Minecraft Education .mcaddon (behavior + resource pack).
+ * Mirrors the layout proven in-game during the Emote Spike tests (v6). */
+(function (G) {
+  "use strict";
+  const E = G.EmoteEngine;
+
+  // Engine / API versions confirmed working in Minecraft Education
+  const MIN_ENGINE = [1, 20, 50];
+  const SERVER_VERSION = "1.8.0";
+  const SERVER_UI_VERSION = "1.1.0";
+  const CONTROLLER = "emote_ctrl";
+
+  function uuid() {
+    if (G.crypto && G.crypto.randomUUID) return G.crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0; return (c === "x" ? r : (r & 3) | 8).toString(16);
+    });
+  }
+  function shortId() { return "abcdefghijkmnpqrstuvwxyz"[Math.floor(Math.random() * 24)] + Math.random().toString(36).slice(2, 7); }
+
+  function newProject() {
+    return {
+      format: 1, pid: shortId(), packName: "My Emotes", itemName: "Emote Book",
+      ids: { rp: uuid(), rpMod: uuid(), bp: uuid(), bpData: uuid(), bpScript: uuid() },
+      version: [1, 0, 0], emotes: [], menuStyle: "pixel",
+    };
+  }
+
+  /** Default menu face for a new emote: the first face no other emote uses yet */
+  const FACE_ORDER = ["smile", "grin", "wink", "hearts", "cool", "laugh", "wow", "silly"];
+  function nextFace(existing) {
+    const used = new Set(existing.map((e) => e.face));
+    return FACE_ORDER.find((f) => !used.has(f)) || FACE_ORDER[existing.length % FACE_ORDER.length];
+  }
+  function facePixels(face) { return (G.EmoteUIArt.faces[face] || G.EmoteUIArt.faces.smile).slice(); }
+  /** Give emotes from older projects a menu icon */
+  function ensureIcons(project) {
+    project.emotes.forEach((em, i) => {
+      if (!Array.isArray(em.icon) || em.icon.length !== 256) { em.face = nextFace(project.emotes.slice(0, i)); em.icon = facePixels(em.face); }
+    });
+    if (!project.menuStyle) project.menuStyle = "pixel";
+  }
+
+  /** Emote record from one animation in an uploaded file */
+  function emoteFromAnimation(animId, anim, fileName, existing) {
+    const name = E.prettyName(animId);
+    const face = nextFace(existing);
+    return {
+      key: shortId(), name, slug: uniqueSlug(E.slugify(name), existing),
+      loop: anim.loop === true, source: { file: fileName, anim: animId },
+      anim, map: E.autoMap(anim), face, icon: facePixels(face),
+    };
+  }
+  function uniqueSlug(base, emotes, self) {
+    const taken = new Set(emotes.filter((e) => e !== self).map((e) => e.slug));
+    if (!taken.has(base)) return base;
+    for (let n = 2; ; n++) if (!taken.has(`${base}_${n}`)) return `${base}_${n}`;
+  }
+
+  /** Status of an emote's bones: {ok, ignored[], mapped count} */
+  function boneReport(em) {
+    const names = Object.keys(em.anim.bones || {});
+    const ignored = names.filter((n) => !em.map[n]);
+    const targets = names.map((n) => em.map[n]).filter(Boolean);
+    const dupes = targets.filter((t, i) => targets.indexOf(t) !== i);
+    return { total: names.length, mapped: names.length - ignored.length, ignored, dupes: [...new Set(dupes)] };
+  }
+
+  function animIdFor(project, em) { return `animation.emote.${project.pid}_${em.slug}`; }
+
+  /** Animation JSON as it goes into the resource pack (bones renamed, loop applied) */
+  // Body yaw follows where the player looks; vanilla puts this on the head (look_at_target)
+  const FACING = "q.target_y_rotation";
+  /** Add FACING to the Y part of any rotation channel value (array, single value, or keyframe map) */
+  function addFacingY(ch) {
+    const addY = (v) => {
+      const [x, y, z] = Array.isArray(v) ? [v[0] ?? 0, v[1] ?? 0, v[2] ?? 0] : [v, v, v];
+      return [x, y === 0 || y === "0" ? FACING : `(${y}) + ${FACING}`, z];
+    };
+    if (ch === undefined) return [0, FACING, 0];
+    if (ch && typeof ch === "object" && !Array.isArray(ch)) {
+      const out = {};
+      for (const [t, kf] of Object.entries(ch)) {
+        if (kf && typeof kf === "object" && !Array.isArray(kf)) {
+          const k = { ...kf };
+          if (k.pre !== undefined) k.pre = addY(k.pre);
+          if (k.post !== undefined) k.post = addY(k.post);
+          out[t] = k;
+        } else out[t] = addY(kf);
+      }
+      return out;
+    }
+    return addY(ch);
+  }
+
+  /**
+   * Animation JSON as it goes into the resource pack.
+   * - bones renamed to the player rig, loop applied
+   * - override_previous_animation: the emote replaces (instead of adds to) vanilla motion on the bones it uses,
+   *   so the camera no longer swings the head around
+   * - head is always included, so it comes from the emote even if the file doesn't animate it
+   * - root turns by the player's look yaw, so turning the camera turns the whole character
+   */
+  function exportAnimation(em) {
+    const bones = {};
+    for (const [src, data] of Object.entries(em.anim.bones || {})) {
+      const target = em.map[src];
+      if (!target) continue;
+      if (bones[target]) Object.assign(bones[target], data); else bones[target] = JSON.parse(JSON.stringify(data));
+    }
+    if (!bones.head) bones.head = { rotation: [0, 0, 0] };
+    else if (bones.head.rotation === undefined) bones.head.rotation = [0, 0, 0];
+    bones.root = bones.root || {};
+    bones.root.rotation = addFacingY(bones.root.rotation);
+    const out = { loop: !!em.loop, animation_length: E.animLength(em.anim), override_previous_animation: true, bones };
+    if (em.anim.anim_time_update !== undefined) out.anim_time_update = em.anim.anim_time_update;
+    return out;
+  }
+
+  function problems(project) {
+    const list = [];
+    if (!project.emotes.length) list.push("Add at least one emote.");
+    for (const em of project.emotes) {
+      const r = boneReport(em);
+      if (!em.name.trim()) list.push("Every emote needs a name.");
+      if (r.mapped === 0) list.push(`“${em.name}” has no body parts that match the player, so it would not move.`);
+    }
+    if (!project.packName.trim()) list.push("Give the pack a name.");
+    return [...new Set(list)];
+  }
+
+  /**
+   * Build the .mcaddon. `assets` = {itemIcon, packIcon, emoteIcons: {emoteKey: PNG}, systemIcons: {stop, cam_third, cam_mine}} (PNG bytes)
+   * Returns a Blob/Uint8Array (per JSZip type) and bumps project.version first.
+   */
+  async function buildAddon(JSZip, project, assets, type = "blob") {
+    const p = project;
+    const v = p.version;
+    const ITEM = `emotes:book_${p.pid}`;
+    const folder = p.packName.replace(/[\\/:*?"<>|\x00-\x1f]/g, "").trim() || "Emotes";
+    const RP = `${folder} RP`, BP = `${folder} BP`;
+    const zip = new JSZip();
+    const put = (path, data) => zip.file(path, typeof data === "string" || data instanceof Uint8Array ? data : JSON.stringify(data, null, 2));
+
+    // ---- resource pack
+    put(`${RP}/manifest.json`, {
+      format_version: 2,
+      header: { name: RP, description: `Emote animations for ${p.packName}`, uuid: p.ids.rp, version: v, min_engine_version: MIN_ENGINE },
+      modules: [{ type: "resources", uuid: p.ids.rpMod, version: v }],
+    });
+    const emoteData = [];
+    p.emotes.forEach((em, i) => {
+      const id = animIdFor(p, em);
+      const anim = exportAnimation(em);
+      put(`${RP}/animations/${String(i).padStart(2, "0")}_${em.slug}.animation.json`, { format_version: "1.10.0", animations: { [id]: anim } });
+      emoteData.push({ anim: id, name: em.name, loop: !!em.loop, length: anim.animation_length, icon: `textures/ui/emote_${p.pid}/icons/${em.slug}` });
+    });
+    const stopId = `animation.emote.${p.pid}__stop`;
+    put(`${RP}/animations/zz_stop.animation.json`, { format_version: "1.10.0", animations: {
+      [stopId]: { loop: false, animation_length: 0.1, bones: { head: { rotation: [0, 0, 0] } } } } });
+    put(`${RP}/textures/item_texture.json`, { resource_pack_name: p.packName, texture_name: "atlas.items",
+      texture_data: { [`emote_book_${p.pid}`]: { textures: `textures/items/emote_book_${p.pid}` } } });
+    put(`${RP}/textures/items/emote_book_${p.pid}.png`, assets.itemIcon);
+    put(`${RP}/texts/en_US.lang`, `item.${ITEM}=${p.itemName.replace(/[\r\n]+/g, " ")}\n`);
+    put(`${RP}/texts/languages.json`, ["en_US"]);
+    put(`${RP}/pack_icon.png`, assets.packIcon);
+
+    // ---- menu art + icons (icons show in both menu styles; the frame/tiles only in the pixel menu)
+    const ART = G.EmoteUIArt, UI = G.EmoteMenuUI, pixelMenu = p.menuStyle !== "classic";
+    const texDir = `textures/ui/emote_${p.pid}`;
+    const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+    p.emotes.forEach((em) => put(`${RP}/${texDir}/icons/${em.slug}.png`, assets.emoteIcons[em.key]));
+    for (const k of ["stop", "cam_third", "cam_mine"]) put(`${RP}/${texDir}/icons/_${k}.png`, assets.systemIcons[k]);
+    if (pixelMenu) {
+      for (const [name, data] of Object.entries(ART.textures)) put(`${RP}/${texDir}/${name}.png`, b64(data));
+      put(`${RP}/${texDir}/panel.json`, { nineslice_size: 6, base_size: [24, 24] });
+      const ui = UI.menuUi(p.pid);
+      put(`${RP}/ui/_ui_defs.json`, ui.uiDefs);
+      put(`${RP}/ui/server_form.json`, ui.serverForm);
+      put(`${RP}/ui/emote_menu_${p.pid}.json`, ui.menu);
+    }
+
+    // ---- behavior pack
+    put(`${BP}/manifest.json`, {
+      format_version: 2,
+      header: { name: BP, description: `${p.itemName}: emote menu for ${p.packName}`, uuid: p.ids.bp, version: v, min_engine_version: MIN_ENGINE },
+      modules: [
+        { type: "data", uuid: p.ids.bpData, version: v },
+        { type: "script", language: "javascript", uuid: p.ids.bpScript, version: v, entry: "scripts/main.js" },
+      ],
+      dependencies: [
+        { uuid: p.ids.rp, version: v },
+        { module_name: "@minecraft/server", version: SERVER_VERSION },
+        { module_name: "@minecraft/server-ui", version: SERVER_UI_VERSION },
+      ],
+    });
+    put(`${BP}/items/emote_book_${p.pid}.json`, {
+      format_version: "1.20.50",
+      "minecraft:item": {
+        description: { identifier: ITEM, menu_category: { category: "items" } },
+        components: {
+          "minecraft:icon": { texture: `emote_book_${p.pid}` },
+          "minecraft:display_name": { value: p.itemName },
+          "minecraft:max_stack_size": 1,
+        },
+      },
+    });
+    const icon = (k) => `${texDir}/icons/_${k}`;
+    const menu = pixelMenu
+      ? { title: UI.MENU_FLAG + p.itemName, stop: { label: "Stop", icon: icon("stop") },
+          camThird: { label: "3rd person", icon: icon("cam_third") }, camMine: { label: "My view", icon: icon("cam_mine") } }
+      : { title: p.itemName, stop: { label: "§cStop emote", icon: icon("stop") },
+          camThird: { label: "Camera: 3rd person", icon: icon("cam_third") }, camMine: { label: "Camera: Keep my view", icon: icon("cam_mine") } };
+    const fill = { __ITEM__: ITEM, __CTRL__: CONTROLLER, __EMOTES__: JSON.stringify(emoteData, null, 2),
+      __MENU__: JSON.stringify(menu, null, 2), __STOP_ANIM__: stopId, __GIVEN_TAG__: `emote_book_given_${p.pid}` };
+    const script = G.EMOTE_SCRIPT_TEMPLATE.replace(/__(ITEM|CTRL|EMOTES|MENU|STOP_ANIM|GIVEN_TAG)__/g, (m) => fill[m]);
+    put(`${BP}/scripts/main.js`, script);
+    put(`${BP}/functions/emotes_${p.pid}/give.mcfunction`, `give @s ${ITEM}\n`);
+    p.emotes.forEach((em, i) => {
+      const stop = em.loop ? "q.is_moving" : "q.any_animation_finished";
+      put(`${BP}/functions/emotes_${p.pid}/${em.slug}.mcfunction`, `playanimation @s ${emoteData[i].anim} a 0.2 "${stop}" ${CONTROLLER}\n`);
+    });
+    put(`${BP}/pack_icon.png`, assets.packIcon);
+    // The whole project, so the add-on can be re-opened in Cleverlike Emote Tool later
+    put(`${BP}/emote_book_project.json`, project);
+
+    return zip.generateAsync({ type, compression: "DEFLATE" });
+  }
+
+  function bumpVersion(project) {
+    const v = project.version.slice(); v[2] += 1; project.version = v; return v;
+  }
+
+  /**
+   * "Version up": next minor version (1.0.4 → 1.1.0) and fresh pack UUIDs, so Minecraft
+   * treats the next download as a brand-new pack instead of an update to a cached one.
+   * The item ID stays the same, so books players already hold keep working.
+   */
+  function versionUp(project) {
+    const before = { version: project.version.slice(), ids: { ...project.ids } };
+    project.version = [project.version[0], project.version[1] + 1, 0];
+    project.ids = { rp: uuid(), rpMod: uuid(), bp: uuid(), bpData: uuid(), bpScript: uuid() };
+    return before;
+  }
+
+  /** Read a .mcaddon / .zip: returns {project} if made by this tool, else {animations:[{file,id,anim}]} */
+  async function readAddon(JSZip, data) {
+    const zip = await JSZip.loadAsync(data);
+    const projFile = Object.values(zip.files).find((f) => !f.dir && /(^|\/)emote_book_project\.json$/.test(f.name));
+    if (projFile) {
+      const project = JSON.parse(await projFile.async("string"));
+      if (!project || !Array.isArray(project.emotes) || !project.ids) throw new Error("The project data inside this add-on is damaged.");
+      return { project };
+    }
+    const animations = [];
+    for (const f of Object.values(zip.files)) {
+      if (f.dir || !/\.json$/i.test(f.name) || !/animations?\//i.test(f.name)) continue;
+      try {
+        for (const a of E.parseAnimationFile(await f.async("string"))) animations.push({ file: f.name.split("/").pop(), ...a });
+      } catch { /* not an animation file */ }
+    }
+    return { animations };
+  }
+
+  G.EmotePack = { FACE_ORDER, facePixels, ensureIcons, newProject, emoteFromAnimation, uniqueSlug, boneReport, problems, buildAddon, bumpVersion, versionUp, readAddon, animIdFor, exportAnimation };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Cleverlike Emote Tool — 3D preview
+ * Renders the Bedrock player rig (geometry.humanoid.custom / customSlim) with three.js
+ * and plays an emote on it. Coordinates follow Blockbench: Bedrock X is mirrored,
+ * rotations apply as (-x, -y, z) in ZYX order. Units are pixels (16 = one block). */
+(function (G) {
+  "use strict";
+  const E = G.EmoteEngine;
+  const DEG = Math.PI / 180;
+
+  function rigDef(slim) {
+    const aw = slim ? 3 : 4, ap = slim ? 21.5 : 22;
+    return [
+      { name: "root", parent: null, pivot: [0, 0, 0] },
+      { name: "waist", parent: "root", pivot: [0, 12, 0] },
+      { name: "body", parent: "waist", pivot: [0, 24, 0], cubes: [{ o: [-4, 12, -2], s: [8, 12, 4], uv: [16, 16] }] },
+      { name: "jacket", parent: "body", pivot: [0, 24, 0], cubes: [{ o: [-4, 12, -2], s: [8, 12, 4], uv: [16, 32], i: 0.25 }] },
+      { name: "head", parent: "body", pivot: [0, 24, 0], cubes: [{ o: [-4, 24, -4], s: [8, 8, 8], uv: [0, 0] }] },
+      { name: "hat", parent: "head", pivot: [0, 24, 0], cubes: [{ o: [-4, 24, -4], s: [8, 8, 8], uv: [32, 0], i: 0.5 }] },
+      { name: "cape", parent: "body", pivot: [0, 24, 3] },
+      { name: "rightArm", parent: "body", pivot: [-5, ap, 0], cubes: [{ o: [-4 - aw, 12, -2], s: [aw, 12, 4], uv: [40, 16] }] },
+      { name: "rightSleeve", parent: "rightArm", pivot: [-5, ap, 0], cubes: [{ o: [-4 - aw, 12, -2], s: [aw, 12, 4], uv: [40, 32], i: 0.25 }] },
+      { name: "rightItem", parent: "rightArm", pivot: [-6, 15, 1] },
+      { name: "leftArm", parent: "body", pivot: [5, ap, 0], cubes: [{ o: [4, 12, -2], s: [aw, 12, 4], uv: [32, 48] }] },
+      { name: "leftSleeve", parent: "leftArm", pivot: [5, ap, 0], cubes: [{ o: [4, 12, -2], s: [aw, 12, 4], uv: [48, 48], i: 0.25 }] },
+      { name: "leftItem", parent: "leftArm", pivot: [6, 15, 1] },
+      { name: "rightLeg", parent: "root", pivot: [-1.9, 12, 0], cubes: [{ o: [-3.9, 0, -2], s: [4, 12, 4], uv: [0, 16] }] },
+      { name: "rightPants", parent: "rightLeg", pivot: [-1.9, 12, 0], cubes: [{ o: [-3.9, 0, -2], s: [4, 12, 4], uv: [0, 32], i: 0.25 }] },
+      { name: "leftLeg", parent: "root", pivot: [1.9, 12, 0], cubes: [{ o: [-0.1, 0, -2], s: [4, 12, 4], uv: [16, 48] }] },
+      { name: "leftPants", parent: "leftLeg", pivot: [1.9, 12, 0], cubes: [{ o: [-0.1, 0, -2], s: [4, 12, 4], uv: [0, 48], i: 0.25 }] },
+    ];
+  }
+
+  /** Box-UV cube in three space (X mirrored), vertices relative to the bone pivot */
+  function cubeGeometry(THREE, c, pivot, texW, texH) {
+    const [ox, oy, oz] = c.o, [w, h, d] = c.s, [u, v] = c.uv, i = c.i || 0;
+    const X0 = -(ox + w) - i, X1 = -ox + i, Y0 = oy - i, Y1 = oy + h + i, Z0 = oz - i, Z1 = oz + d + i;
+    const px = -pivot[0], py = pivot[1], pz = pivot[2];
+    const pos = [], uvs = [], nrm = [];
+    function quad(tl, tr, br, bl, rect, n) {
+      const [u0, v0, rw, rh] = rect;
+      const U = (x) => x / texW, V = (y) => 1 - y / texH;
+      const P = [tl, bl, br, tl, br, tr];
+      const T = [[u0, v0], [u0, v0 + rh], [u0 + rw, v0 + rh], [u0, v0], [u0 + rw, v0 + rh], [u0 + rw, v0]];
+      for (let k = 0; k < 6; k++) {
+        pos.push(P[k][0] - px, P[k][1] - py, P[k][2] - pz);
+        uvs.push(U(T[k][0]), V(T[k][1]));
+        nrm.push(...n);
+      }
+    }
+    quad([X1, Y1, Z0], [X0, Y1, Z0], [X0, Y0, Z0], [X1, Y0, Z0], [u + d, v + d, w, h], [0, 0, -1]);          // front
+    quad([X1, Y1, Z1], [X1, Y1, Z0], [X1, Y0, Z0], [X1, Y0, Z1], [u, v + d, d, h], [1, 0, 0]);              // player's right
+    quad([X0, Y1, Z0], [X0, Y1, Z1], [X0, Y0, Z1], [X0, Y0, Z0], [u + d + w, v + d, d, h], [-1, 0, 0]);     // player's left
+    quad([X0, Y1, Z1], [X1, Y1, Z1], [X1, Y0, Z1], [X0, Y0, Z1], [u + 2 * d + w, v + d, w, h], [0, 0, 1]);  // back
+    quad([X1, Y1, Z1], [X0, Y1, Z1], [X0, Y1, Z0], [X1, Y1, Z0], [u + d, v, w, d], [0, 1, 0]);              // top
+    quad([X1, Y0, Z0], [X0, Y0, Z0], [X0, Y0, Z1], [X1, Y0, Z1], [u + d + w, v, w, d], [0, -1, 0]);         // bottom
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+    return g;
+  }
+
+  /** The default classic-arm preview skin (64×64) */
+  const DEFAULT_SKIN = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC+ElEQVR4AexavYoUQRCu3UThLlLwFlZEUfEVLtfYQM0u8gnEn+gwMDDVdzBYzIwMFQzvAUwExR9c2BPTwzO5PWq4D5q6mqqZ673rnple+Kjuqa6vu76ug+6ZG5Pze//559LC/YfPlhYc+uRuVwBe4eaNy6SBjn7TjQlpOHJnbRoJkHUGkYsrAkQK2PnwUgGd38LIBBpVwM7X36QBc893F6QB/pzt+Pbi1dLC28VFsvDm5gWysP/tydJCanGqCtjcuEQasLirkzXSAP/atSukAf5z01ukAf6UthIg5QJSz91IgHtTIgYWy20G+l22jQTocoLe2hsJ8G5OxAAZtxnod9k2EqDLCXprrwTY2f1DGhD8Y7FHGuDf+/6LNMD/f/6FNMB/llbONf44eToK8fjvAwqxP3tBIWZ31kch1re3RyE+3d2iEB/+PaIQWy/HFEK+S5ALlH35bqJtvOSrKkA+xN0fz3HXR9+ziJcWceCTFn7PghfjwIN+G6sK0Iag62NVAXDuR3I456PvWcRLizjwSQu/Z8GLceBBv409dheQ5355zpfnenmPkPGyL/lmzw8oRFt+ySfjPTGqCsA9AINx7kcf53z0ca5Hvy4ePLAYX8cHXliMr+OHv44PfstWAlgD+u4rAvR9h738SgV4CvXdXyqg7zvs5VcqwFOo7/6qAvAuAMni7o8+7vro426Pfl08eGAxvo4PvLAYX8cPfx0f+z0cex8Q3vW5Hd71uX3++utRiPBdArc5xgJzhAi5tDZzhpDcIRe3JYcrgDeg7/7qT6DvSVr5FQEsdYbgKxUwhF22ciwVYKkzBF+pgCHsspVjqQBLnSH4SgUMYZetHHtXAVaymm/lAsR+v4+N15K0nq1cAJ4s9vt9bDyvoSlORYCmk+cw7lQEiP1+HxvfRthoAbz/D/C+38fGt0lWGxstAJPGfr+Pjec1nBQrEeCkk+cQVwTIYRdSrqFUQEr1c5i7VEAOu5ByDaUCUqqfw9wrqYDY7/cx8bEiHgIAAP//rCdZDQAAAAZJREFUAwCVozDeWe9Q4QAAAABJRU5ErkJggg==";
+  /** Resolves to a canvas holding the default skin; falls back to a drawn one if it can't load */
+  /** The default slim-arm preview skin (64×64, 3-pixel arms) */
+  const DEFAULT_SKIN_SLIM = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADNUlEQVR4AexavYoUQRCu3UThLlLwDlZEUfEVLtfYQM0u8gnEn+gwMJDL9B0MFjMjQwXDewATQfEHF/bE0MMzceUb7oOyrna6b2buen564aOqt36m6+sKuqdnLIHf6/dfF2W4fffRogyB9MnNQQIww40r58WDHPwma+vi4cDcahFFQKsrqDm5TEBNAjsfnjug80tYs4CoDtj5+F088Nmz3bl4oL3Ncnx9/mxRhpfzs1KGF1fPSBn2Pz1YlCE1OUUHbKydEw+c3MX1FfFA+8qlC+KB9lOTa+KB9pSyICDlBFI/O4qAWxMRgJOFDnDcZRlFQJcLDM09ioBXMxGAyaADHHdZRhHQ5QJDcy8I2Nn9IR4Y/GW+Jx5o3/v8TTzQ/mf2QTzQfpLSPmv8dv3hSOP+zzuisT99IhrTG6sjjdWtrZHGu5ubovHm9z3R2Hw6Fg37LsFO0I71uwkda/1ix0UHWGee/fk/z/ochyTjrWQc81lJe0giL32Qg3oV6RJQJVFXY1wCuO9nUdzncxySjLeSccxnJe0hibz0QQ7qVeShs4Dd99t9vt3X23OEjbdjm2/6+K9oHCW/zvVre/u/M0csGUUH8BzAIO77OeY+n2Pu6zleFs88lPRflo95Kenv5afNy0VbjCwIiHHsq08moK8rG1tX7oBYpvrqlzugrysbW1fugFim+upXdADfBbBInv055lmfY57tOV4WzzyU9F+Wj3kp6e/lp83LRRtkCIfeB+izPnR91od++vLzkYZ+lwAdMWVADg2dy9ORU0Pn1nmg6/hQ4bQXHcDBEGUmYIirrmvOHaDZGKKeO2CIq65rzh2g2RiinjtgiKuua84doNkYop47oG+rftR6Gu8AfX8PXd/hQw9NEDEE/IlQXFV74wRgIri/B6ADuMMHoMfAxsbEVPU5FgKqTiZF3LEQgPt7gAXhDh/gOCRtbMi/jr02AaHvA/QdPvSTvv8PkVObADzAu7/HNwGwAd4dPr4BgA3w4vE/4MXi/6bQCAFNTSZFnkxACtbb9MzcAW1ajRRzyR2QgvU2PTN3QJtWI8VcGukA7/4e3wSwIO8OH98A0O7F0+bF0gZZF/8AAAD//4WEasYAAAAGSURBVAMArnkGjhysXyYAAAAASUVORK5CYII=";
+  function loadDefaultSkin(slim) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { const cv = document.createElement("canvas"); cv.width = img.width; cv.height = img.height; cv.getContext("2d").drawImage(img, 0, 0); resolve(cv); };
+      img.onerror = () => resolve(makeDefaultSkin());
+      img.src = slim ? DEFAULT_SKIN_SLIM : DEFAULT_SKIN;
+    });
+  }
+
+  /** Drawn fallback skin, 64×64 */
+  function makeDefaultSkin() {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+    const g = cv.getContext("2d");
+    const fill = (c, x, y, w, h) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+    const SKIN = "#c98e66", HAIR = "#4a2f22", SHIRT = "#2f7f88", SHIRT2 = "#276b73", PANTS = "#36395c", SHOE = "#24232b";
+    // head
+    fill(SKIN, 0, 0, 32, 16); fill(HAIR, 8, 0, 8, 8); fill(HAIR, 0, 8, 32, 2); fill(HAIR, 24, 8, 8, 8);
+    fill(HAIR, 0, 8, 2, 6); fill(HAIR, 22, 8, 2, 6);
+    fill("#ffffff", 9, 12, 2, 1); fill("#ffffff", 13, 12, 2, 1); fill("#2b2a3a", 10, 12, 1, 1); fill("#2b2a3a", 13, 12, 1, 1);
+    fill("#9c5f45", 11, 14, 2, 1);
+    // body + arms (shirt) with hands
+    fill(SHIRT, 16, 16, 24, 16); fill(SHIRT2, 20, 20, 8, 1);
+    fill(SHIRT, 40, 16, 16, 16); fill(SKIN, 40, 29, 16, 3); fill(SKIN, 48, 16, 4, 4);
+    fill(SHIRT, 32, 48, 16, 16); fill(SKIN, 32, 61, 16, 3); fill(SKIN, 40, 48, 4, 4);
+    // legs
+    fill(PANTS, 0, 16, 16, 16); fill(SHOE, 0, 29, 16, 3); fill(SHOE, 8, 16, 4, 4);
+    fill(PANTS, 16, 48, 16, 16); fill(SHOE, 16, 61, 16, 3); fill(SHOE, 24, 48, 4, 4);
+    return cv;
+  }
+
+  /** Build the player rig with a skin. Returns {root, bones, rest, dispose()} */
+  function makeRig(THREE, skinCanvas, slim) {
+    const texture = new THREE.CanvasTexture(skinCanvas);
+    texture.magFilter = THREE.NearestFilter; texture.minFilter = THREE.NearestFilter; texture.generateMipmaps = false;
+    const base = new THREE.MeshLambertMaterial({ map: texture, alphaTest: 0.5 });
+    const layer = new THREE.MeshLambertMaterial({ map: texture, alphaTest: 0.1, transparent: true });
+    const bones = {}, rest = {}; let root = null;
+    // UVs are in 64-pixel skin units; HD skins (128, 256, …) are the same layout scaled up
+    const tw = 64, th = Math.round(64 * skinCanvas.height / skinCanvas.width);
+    const def = rigDef(slim);
+    for (const b of def) {
+      const grp = new THREE.Group(); grp.name = b.name; grp.rotation.order = "ZYX";
+      const parent = b.parent ? def.find((x) => x.name === b.parent) : null;
+      const pp = parent ? parent.pivot : [0, 0, 0];
+      grp.position.set(-(b.pivot[0] - pp[0]), b.pivot[1] - pp[1], b.pivot[2] - pp[2]);
+      rest[b.name] = grp.position.clone();
+      for (const c of b.cubes || []) {
+        if (th === 32 && c.uv[1] >= 32) continue; // legacy 64×32 skins have no overlay/left-limb areas
+        const uv = th === 32 && (b.name === "leftArm" || b.name === "leftLeg") ? (b.name === "leftArm" ? [40, 16] : [0, 16]) : c.uv;
+        grp.add(new THREE.Mesh(cubeGeometry(THREE, { ...c, uv }, b.pivot, tw, th), c.i ? layer : base));
+      }
+      if (b.parent) bones[b.parent].add(grp); else root = grp;
+      bones[b.name] = grp;
+    }
+    return { root, bones, rest, dispose() { root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); texture.dispose(); base.dispose(); layer.dispose(); } };
+  }
+
+  /** Put the rig into an emote's pose at time t (or the rest pose when emote is null) */
+  function poseRig(rig, emote, t, life = 0) {
+    for (const [n, g] of Object.entries(rig.bones)) { g.rotation.set(0, 0, 0); g.position.copy(rig.rest[n]); g.scale.set(1, 1, 1); }
+    if (!emote) return;
+    const ctx = { q: { anim_time: t, life_time: life, delta_time: 1 / 60, is_moving: 0, is_on_ground: 1, modified_move_speed: 0, ground_speed: 0 }, v: {}, t: {} };
+    const pose = E.samplePose(emote.anim, t, ctx);
+    for (const [src, p] of Object.entries(pose)) {
+      const target = emote.map[src]; const g = target && rig.bones[target];
+      if (!g) continue;
+      if (p.rot) g.rotation.set(-p.rot[0] * DEG, -p.rot[1] * DEG, p.rot[2] * DEG);
+      if (p.pos) g.position.set(rig.rest[target].x - p.pos[0], rig.rest[target].y + p.pos[1], rig.rest[target].z + p.pos[2]);
+      if (p.scale) g.scale.set(p.scale[0], p.scale[1], p.scale[2]);
+    }
+  }
+
+  function createPreview(canvas, THREE) {
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(G.devicePixelRatio || 1, 2));
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, 1, 1, 1000);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8597, 0.75));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-30, 60, -40); scene.add(sun);
+
+    // Floor: a 4×4 block patch (one cell = one block = 16px)
+    const grid = new THREE.GridHelper(64, 4, 0x888888, 0x888888); scene.add(grid);
+    const shadowCv = document.createElement("canvas"); shadowCv.width = shadowCv.height = 64;
+    const sg = shadowCv.getContext("2d"); const grd = sg.createRadialGradient(32, 32, 2, 32, 32, 32);
+    grd.addColorStop(0, "rgba(0,0,0,0.35)"); grd.addColorStop(1, "rgba(0,0,0,0)"); sg.fillStyle = grd; sg.fillRect(0, 0, 64, 64);
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(22, 22), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shadowCv), transparent: true, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.05; scene.add(shadow);
+
+    let rig = null, slim = false;
+    let emote = null, time = 0, life = 0, playing = true, hold = 0;
+    const view = { yaw: 205, pitch: 8, dist: 82 };
+    let onTime = () => {};
+
+    function buildRig(skinCanvas) {
+      if (rig) { scene.remove(rig.root); rig.dispose(); }
+      rig = makeRig(THREE, skinCanvas, slim); scene.add(rig.root);
+      applyPose();
+    }
+    function applyPose() { if (rig) poseRig(rig, emote, time, life); }
+
+    function placeCamera() {
+      const t = new THREE.Vector3(0, 17, 0), y = view.yaw * DEG, p = view.pitch * DEG;
+      camera.position.set(t.x + view.dist * Math.sin(y) * Math.cos(p), t.y + view.dist * Math.sin(p), t.z + view.dist * Math.cos(y) * Math.cos(p));
+      camera.lookAt(t);
+    }
+
+    function resize() {
+      const r = canvas.parentElement.getBoundingClientRect();
+      const w = Math.max(1, Math.floor(r.width)), h = Math.max(1, Math.floor(r.height));
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(canvas.parentElement);
+
+    // Orbit by dragging, zoom with wheel / pinch
+    let drag = null;
+    canvas.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      view.yaw -= (e.clientX - drag.x) * 0.5; view.pitch = Math.max(-20, Math.min(70, view.pitch + (e.clientY - drag.y) * 0.4));
+      drag.x = e.clientX; drag.y = e.clientY;
+    });
+    const end = () => { drag = null; };
+    canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("wheel", (e) => { e.preventDefault(); view.dist = Math.max(40, Math.min(160, view.dist * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
+
+    let last = performance.now();
+    function frame(now) {
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      if (emote && playing) {
+        const len = E.animLength(emote.anim);
+        life += dt;
+        if (hold > 0) { hold -= dt; if (hold <= 0) time = 0; }
+        else {
+          time += dt;
+          if (emote.loop) time %= len;
+          else if (time >= len) { time = len; hold = 0.8; }
+        }
+        onTime(time, len);
+      }
+      applyPose(); placeCamera(); renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+    resize(); requestAnimationFrame(frame);
+
+    return {
+      setSkin(cv, isSlim) { slim = !!isSlim; buildRig(cv); },
+      setEmote(em) { emote = em; time = 0; hold = 0; life = 0; if (em) onTime(0, E.animLength(em.anim)); },
+      play() { playing = true; if (emote && !emote.loop && time >= E.animLength(emote.anim)) time = 0; },
+      pause() { playing = false; },
+      get playing() { return playing; },
+      get time() { return time; },
+      seek(t) { time = t; hold = 0; },
+      onTime(fn) { onTime = fn; },
+      resetView() { Object.assign(view, { yaw: 205, pitch: 8, dist: 82 }); },
+      setColors(bg, line) {
+        scene.background = new THREE.Color(bg);
+        const m = grid.material; m.vertexColors = false; m.color = new THREE.Color(line); m.transparent = true; m.opacity = 0.7; m.needsUpdate = true;
+      },
+    };
+  }
+
+  G.EmotePreview = { createPreview, makeDefaultSkin, loadDefaultSkin, makeRig, poseRig };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Cleverlike Emote Tool — automatic pose snapshots
+ * Renders an emote's most expressive frame offscreen and turns it into a 32×32 pixel-art icon
+ * (limited palette + dark outline) that matches the in-game emoji menu. */
+(function (G) {
+  "use strict";
+  const E = G.EmoteEngine, V = G.EmotePreview;
+  const OUT = 32, SS = 4, RENDER = OUT * SS;   // render 128×128, box-filter down to 32×32
+  const INK = "#2a1a10";
+  const DEG = Math.PI / 180;
+  const KNEE = 7;   // model pixels above the feet
+
+  // How much each body part counts toward "this is the moment that shows the emote"
+  const WEIGHT = { rightArm: 1.3, leftArm: 1.3, rightSleeve: 0, leftSleeve: 0, head: 1, hat: 0, body: 0.9, waist: 0.9,
+    rightLeg: 0.7, leftLeg: 0.7, root: 0.35, jacket: 0, rightPants: 0, leftPants: 0, cape: 0.2 };
+
+  /** Time (s) of the most expressive frame: the pose furthest from standing still */
+  function bestTime(em) {
+    const len = E.animLength(em.anim), steps = 32;
+    let best = 0, bestScore = -1;
+    for (let i = 0; i <= steps; i++) {
+      const t = (len * i) / steps;
+      const pose = E.samplePose(em.anim, t, { q: { anim_time: t, life_time: t }, v: {}, t: {} });
+      let score = 0;
+      for (const [src, p] of Object.entries(pose)) {
+        const w = WEIGHT[em.map[src]] ?? (em.map[src] ? 0.5 : 0);
+        if (!w) continue;
+        if (p.rot) score += w * (Math.abs(p.rot[0]) + Math.abs(p.rot[1]) + Math.abs(p.rot[2]));
+        if (p.pos) score += w * 4 * (Math.abs(p.pos[0]) + Math.abs(p.pos[1]) + Math.abs(p.pos[2]));
+      }
+      if (score > bestScore + 1e-6) { bestScore = score; best = t; }
+    }
+    return best;
+  }
+
+  const hex = (r, g, b) => "#" + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+
+  /** Reduce colours with a few rounds of k-means so the icon reads as pixel art */
+  function quantize(colors, k) {
+    if (colors.length <= k) return colors.map((c) => c);
+    let cent = [];
+    for (let i = 0; i < k; i++) cent.push(colors[Math.floor((i + 0.5) * colors.length / k)].slice());
+    const assign = new Array(colors.length).fill(0);
+    for (let it = 0; it < 8; it++) {
+      colors.forEach((c, i) => {
+        let bi = 0, bd = Infinity;
+        cent.forEach((m, j) => { const d = (c[0] - m[0]) ** 2 + (c[1] - m[1]) ** 2 + (c[2] - m[2]) ** 2; if (d < bd) { bd = d; bi = j; } });
+        assign[i] = bi;
+      });
+      const sum = cent.map(() => [0, 0, 0, 0]);
+      colors.forEach((c, i) => { const s = sum[assign[i]]; s[0] += c[0]; s[1] += c[1]; s[2] += c[2]; s[3]++; });
+      cent = cent.map((m, j) => (sum[j][3] ? [sum[j][0] / sum[j][3], sum[j][1] / sum[j][3], sum[j][2] / sum[j][3]] : m));
+    }
+    return colors.map((c, i) => cent[assign[i]]);
+  }
+
+  function createSnapshotter(THREE) {
+    const canvas = document.createElement("canvas"); canvas.width = canvas.height = RENDER;
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(1); renderer.setSize(RENDER, RENDER, false); renderer.setClearColor(0x000000, 0);
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8597, 0.8));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(-30, 60, -40); scene.add(sun);
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+    const read = document.createElement("canvas"); read.width = read.height = RENDER;
+    const rctx = read.getContext("2d", { willReadFrequently: true });
+    let rig = null, rigKey = null;
+
+    function useRig(skinCanvas, slim) {
+      const key = skinCanvas; // rebuild when the skin canvas or arm width changes
+      if (rig && rigKey === key && rig.slim === slim) return;
+      if (rig) { scene.remove(rig.root); rig.dispose(); }
+      rig = V.makeRig(THREE, skinCanvas, slim); rig.slim = slim; rigKey = key; scene.add(rig.root);
+    }
+
+    /** 32×32 icon pixels ("#rrggbb" or "") for an emote at time t */
+    function snap(em, t, skinCanvas, slim) {
+      useRig(skinCanvas, slim);
+      V.poseRig(rig, em, t, t);
+      rig.root.updateMatrixWorld(true);
+
+      // Three-quarter front view, framed tightly on the posed character
+      const box = new THREE.Box3().setFromObject(rig.root);
+      // Frame from just above the knees up: emotes live in the arms and head, and a full body is too thin at 32×32
+      box.min.y = Math.min(Math.max(box.min.y, KNEE), box.max.y - 8);
+      const center = box.getCenter(new THREE.Vector3());
+      const yaw = 200 * DEG, pitch = 6 * DEG;
+      camera.position.set(center.x + 200 * Math.sin(yaw) * Math.cos(pitch), center.y + 200 * Math.sin(pitch), center.z + 200 * Math.cos(yaw) * Math.cos(pitch));
+      camera.lookAt(center); camera.updateMatrixWorld(true);
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      const inv = camera.matrixWorldInverse, v = new THREE.Vector3();
+      for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+        v.set(x, y, z).applyMatrix4(inv); minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y);
+      }
+      const half = Math.max(maxX - minX, maxY - minY) / 2 * (OUT / (OUT - 2.5));   // leave room for the outline
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      Object.assign(camera, { left: cx - half, right: cx + half, top: cy + half, bottom: cy - half });
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+
+      // Box-filter down to 32×32
+      rctx.clearRect(0, 0, RENDER, RENDER); rctx.drawImage(canvas, 0, 0);
+      const d = rctx.getImageData(0, 0, RENDER, RENDER).data;
+      const cells = [], colors = [];
+      for (let y = 0; y < OUT; y++) for (let x = 0; x < OUT; x++) {
+        let r = 0, g = 0, b = 0, a = 0;
+        for (let j = 0; j < SS; j++) for (let i = 0; i < SS; i++) {
+          const k = ((y * SS + j) * RENDER + (x * SS + i)) * 4, al = d[k + 3] / 255;
+          r += d[k] * al; g += d[k + 1] * al; b += d[k + 2] * al; a += al;
+        }
+        const cov = a / (SS * SS);
+        if (cov >= 0.45) { cells.push(colors.length); colors.push([r / a, g / a, b / a]); } else cells.push(-1);
+      }
+      const pal = quantize(colors, 12);
+      const px = cells.map((c) => (c < 0 ? "" : hex(...pal[c])));
+      // Dark outline around the figure, like the emoji faces
+      const out = px.slice();
+      for (let y = 0; y < OUT; y++) for (let x = 0; x < OUT; x++) {
+        if (px[y * OUT + x]) continue;
+        const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const X = x + dx, Y = y + dy; return X >= 0 && Y >= 0 && X < OUT && Y < OUT && px[Y * OUT + X]; });
+        if (n) out[y * OUT + x] = INK;
+      }
+      return out;
+    }
+
+    return { snap, bestTime };
+  }
+
+  G.EmoteSnapshot = { createSnapshotter, bestTime };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Cleverlike Emote Tool — 16×16 item icon editor
+ * Icons are stored in the project as 256 strings ("#rrggbb" or "" for transparent), row by row. */
+(function (G) {
+  "use strict";
+  const N = 16;                                   // item icons; emote icons can also be 32×32
+  const dim = (px) => Math.round(Math.sqrt(px.length));
+
+  // The default Emote Book (also what the add-on used before custom icons)
+  const BOOK_RECTS = [["#6a3fa6", 3, 2, 10, 12], ["#4b2a7a", 3, 2, 2, 12], ["#efe8d6", 5, 12, 8, 2], ["#e0a92a", 7, 5, 4, 4], ["#4b2a7a", 8, 6, 2, 1]];
+  function bookPixels() {
+    const px = new Array(N * N).fill("");
+    for (const [c, x, y, w, h] of BOOK_RECTS) for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) px[j * N + i] = c;
+    return px;
+  }
+  const isValid = (px) => Array.isArray(px) && (px.length === 256 || px.length === 1024) && px.every((c) => c === "" || /^#[0-9a-f]{6}$/i.test(c));
+
+  /** Paint pixels onto a canvas at an integer scale (transparent stays transparent) */
+  function paint(canvas, px, scale) {
+    const n = dim(px);
+    canvas.width = canvas.height = n * scale;
+    const g = canvas.getContext("2d");
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    px.forEach((c, k) => { if (c) { g.fillStyle = c; g.fillRect((k % n) * scale, Math.floor(k / n) * scale, scale, scale); } });
+  }
+  /** PNG bytes at size×size (multiple of 16), nearest-neighbour */
+  function toPng(px, size) {
+    const cv = document.createElement("canvas");
+    paint(cv, px, Math.max(1, Math.round(size / dim(px))));
+    return new Promise((res) => cv.toBlob(async (b) => res(new Uint8Array(await b.arrayBuffer())), "image/png"));
+  }
+  /** Read any image into 16×16 pixels (larger images are sampled nearest-neighbour) */
+  function fromImage(img, N = 16) {
+    const cv = document.createElement("canvas"); cv.width = cv.height = N;
+    const g = cv.getContext("2d"); g.imageSmoothingEnabled = false;
+    g.drawImage(img, 0, 0, N, N);
+    const d = g.getImageData(0, 0, N, N).data, px = [];
+    for (let k = 0; k < N * N; k++) {
+      const a = d[k * 4 + 3];
+      px.push(a < 128 ? "" : "#" + [0, 1, 2].map((o) => d[k * 4 + o].toString(16).padStart(2, "0")).join(""));
+    }
+    return px;
+  }
+
+  const PALETTE = [
+    "#000000", "#3f3f3f", "#7f7f7f", "#bfbfbf", "#ffffff",
+    "#5a2d0c", "#8b5a2b", "#c98e66", "#f2c49b", "#efe8d6",
+    "#b02e26", "#f9452c", "#f9801d", "#fed83d", "#e0a92a",
+    "#5e7c16", "#80c71f", "#169c9c", "#3ab3da", "#3c44aa",
+    "#6a3fa6", "#4b2a7a", "#c74ebd", "#f38baa", "#10499c",
+    "#00aef0", "#2b7fff", "#174fa2", "#febd01", "#ed287f",
+  ];
+
+  /**
+   * Wire up the editor dialog. `els` holds the DOM nodes; `onSave(px)` receives the result.
+   */
+  function createEditor(els, onSave) {
+    let px = [], undo = [], tool = "pencil", color = "#6a3fa6", painting = false, hover = -1, recent = [];
+    let saveCb = onSave, resetPixels = bookPixels, N = 16, CELL = 24;
+    const ctx = els.grid.getContext("2d");
+    const SIZE = 384;
+    els.grid.width = els.grid.height = SIZE;
+
+    const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    function draw() {
+      const a = css("--check-a") || "#e2e8f0", b = css("--check-b") || "#f8fafc", line = css("--grid-line") || "rgba(0,0,0,.12)";
+      for (let k = 0; k < N * N; k++) {
+        const x = (k % N) * CELL, y = Math.floor(k / N) * CELL;
+        if (px[k]) { ctx.fillStyle = px[k]; ctx.fillRect(x, y, CELL, CELL); }
+        else { // checkerboard = transparent
+          const h = CELL / 2;
+          for (let q = 0; q < 4; q++) { ctx.fillStyle = ((q === 0 || q === 3) ? a : b); ctx.fillRect(x + (q % 2) * h, y + (q > 1 ? h : 0), h, h); }
+        }
+      }
+      ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = 0; i <= N; i++) { const p = i * CELL + 0.5; ctx.moveTo(p, 0); ctx.lineTo(p, SIZE); ctx.moveTo(0, p); ctx.lineTo(SIZE, p); }
+      ctx.stroke();
+      ctx.strokeStyle = css("--grid-major") || "rgba(0,0,0,.3)"; ctx.beginPath();
+      const m = (N / 2) * CELL + 0.5; ctx.moveTo(m, 0); ctx.lineTo(m, SIZE); ctx.moveTo(0, m); ctx.lineTo(SIZE, m); ctx.stroke();
+      if (hover >= 0) {
+        ctx.strokeStyle = css("--accent") || "#2b7fff"; ctx.lineWidth = 2;
+        ctx.strokeRect((hover % N) * CELL + 1, Math.floor(hover / N) * CELL + 1, CELL - 2, CELL - 2);
+      }
+      paint(els.prev1, px, 1); paint(els.prev2, px, N === 16 ? 3 : 2);
+      els.prev1.style.width = els.prev1.style.height = N + "px";
+      els.undo.disabled = !undo.length;
+    }
+
+    function setColor(c) {
+      color = c; els.color.value = c; els.colorHex.textContent = c.toUpperCase();
+      els.palette.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.c === c)));
+    }
+    function setTool(t) {
+      tool = t;
+      els.tools.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tool === t)));
+    }
+    function remember(c) {
+      if (!c) return;
+      recent = [c, ...recent.filter((x) => x !== c)].slice(0, 8);
+      els.recent.innerHTML = recent.map((r) => `<button type="button" data-c="${r}" style="--sw:${r}" aria-label="Recent color ${r}" title="${r}"></button>`).join("");
+    }
+    function snapshot() { undo.push(px.slice()); if (undo.length > 60) undo.shift(); }
+
+    function cellAt(e) {
+      const r = els.grid.getBoundingClientRect();
+      const i = Math.floor(((e.clientX - r.left) / r.width) * N), j = Math.floor(((e.clientY - r.top) / r.height) * N);
+      return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i;
+    }
+    function fill(k, to) {
+      const from = px[k]; if (from === to) return;
+      const stack = [k];
+      while (stack.length) {
+        const c = stack.pop(); if (px[c] !== from) continue;
+        px[c] = to; const x = c % N, y = Math.floor(c / N);
+        if (x > 0) stack.push(c - 1); if (x < N - 1) stack.push(c + 1);
+        if (y > 0) stack.push(c - N); if (y < N - 1) stack.push(c + N);
+      }
+    }
+    function apply(k, erase) {
+      if (k < 0) return;
+      const t = erase ? "eraser" : tool;
+      if (t === "pencil") px[k] = color;
+      else if (t === "eraser") px[k] = "";
+      else if (t === "fill") fill(k, color);
+      else if (t === "picker") { if (px[k]) { setColor(px[k]); setTool("pencil"); } }
+    }
+
+    let eraseDrag = false;
+    els.grid.addEventListener("contextmenu", (e) => e.preventDefault());
+    els.grid.addEventListener("pointerdown", (e) => {
+      const k = cellAt(e); if (k < 0) return;
+      eraseDrag = e.button === 2;
+      if (tool !== "picker" || eraseDrag) snapshot();
+      painting = tool === "pencil" || tool === "eraser" || eraseDrag;
+      els.grid.setPointerCapture(e.pointerId);
+      apply(k, eraseDrag);
+      if (!eraseDrag && (tool === "pencil" || tool === "fill")) remember(color);
+      draw();
+    });
+    els.grid.addEventListener("pointermove", (e) => {
+      const k = cellAt(e);
+      if (painting && k >= 0) apply(k, eraseDrag);
+      if (k !== hover || painting) { hover = k; draw(); }
+    });
+    const stop = () => { painting = false; };
+    els.grid.addEventListener("pointerup", stop); els.grid.addEventListener("pointercancel", stop);
+    els.grid.addEventListener("pointerleave", () => { hover = -1; draw(); });
+
+    els.tools.addEventListener("click", (e) => { const b = e.target.closest("button[data-tool]"); if (b) setTool(b.dataset.tool); });
+    els.palette.innerHTML = PALETTE.map((c) => `<button type="button" data-c="${c}" style="--sw:${c}" aria-label="Color ${c}" title="${c}"></button>`).join("");
+    const pick = (e) => { const b = e.target.closest("button[data-c]"); if (b) { setColor(b.dataset.c); if (tool === "eraser" || tool === "picker") setTool("pencil"); } };
+    els.palette.addEventListener("click", pick); els.recent.addEventListener("click", pick);
+    els.color.addEventListener("input", (e) => { setColor(e.target.value); if (tool === "eraser" || tool === "picker") setTool("pencil"); });
+    els.undo.onclick = () => { if (undo.length) { px = undo.pop(); draw(); } };
+    els.clear.onclick = () => { snapshot(); px = new Array(N * N).fill(""); draw(); };
+    els.book.onclick = () => { snapshot(); px = resetPixels(); draw(); };
+    els.importBtn.onclick = () => els.importFile.click();
+    els.importFile.addEventListener("change", (e) => {
+      const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+      const url = URL.createObjectURL(f), img = new Image();
+      img.onload = () => { snapshot(); px = fromImage(img, N); URL.revokeObjectURL(url); draw(); };
+      img.onerror = () => URL.revokeObjectURL(url);
+      img.src = url;
+    });
+    els.dialog.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT") return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); els.undo.click(); return; }
+      const t = { b: "pencil", p: "pencil", e: "eraser", g: "fill", f: "fill", i: "picker" }[e.key.toLowerCase()];
+      if (t && !e.ctrlKey && !e.metaKey) setTool(t);
+    });
+    els.save.onclick = () => { saveCb(px.slice()); close(); };
+    els.cancel.onclick = () => close();
+    els.dialog.addEventListener("cancel", (e) => { e.preventDefault(); close(); });
+
+    function close() { try { els.dialog.close(); } catch { els.dialog.removeAttribute("open"); } }
+
+    return {
+      /** opts: {title, resetLabel, resetPixels(): px, onSave(px)} — defaults edit the Emote Book item icon */
+      open(start, opts = {}) {
+        saveCb = opts.onSave || onSave; resetPixels = opts.resetPixels || bookPixels;
+        if (els.title) els.title.textContent = opts.title || "Design the item icon";
+        if (els.prevCaption) els.prevCaption.textContent = opts.previewLabel || "In the hotbar";
+        els.book.textContent = opts.resetLabel || "Start from the book";
+        px = (isValid(start) ? start : resetPixels()).slice(); undo = [];
+        N = dim(px); CELL = SIZE / N;
+        const first = px.find((c) => c) || "#6a3fa6";
+        setColor(first); setTool("pencil"); hover = -1; draw();
+        try { els.dialog.showModal(); } catch { els.dialog.setAttribute("open", ""); }
+      },
+      redraw: draw,
+    };
+  }
+
+  G.EmoteIcon = { N, dim, bookPixels, isValid, paint, toPng, fromImage, createEditor, PALETTE };
+})(typeof window !== "undefined" ? window : globalThis);
+
+
+/* Cleverlike Emote Tool — page logic */
+(function () {
+  "use strict";
+  const E = window.EmoteEngine, P = window.EmotePack, V = window.EmotePreview;
+  const $ = (id) => document.getElementById(id);
+  const STORE = "ebb.project.v1", SKIN_STORE = "ebb.skin.v1";
+
+  // ------------------------------------------------------------ state
+  let project = null, selected = null, saveTimer = 0;
+  const skin = { canvas: V.makeDefaultSkin(), slim: false, custom: false };
+
+  const freshProject = () => P.newProject();
+  // Every visit starts with an empty pack. Work carries over only through a downloaded add-on
+  // (reopen it with "Open an add-on…"). Clear what older versions of the tool kept in the browser.
+  function load() {
+    try { localStorage.removeItem(STORE); } catch { /* storage unavailable */ }
+    return freshProject();
+  }
+  let unsaved = false;   // emotes changed since the last download
+  function save() { unsaved = project.emotes.length > 0; }
+  window.addEventListener("beforeunload", (e) => { if (unsaved) { e.preventDefault(); e.returnValue = ""; } });
+  const current = () => project.emotes.find((e) => e.key === selected) || null;
+
+  // ------------------------------------------------------------ helpers
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const secs = (n) => `${(+n).toFixed(2)} s`;
+  function status(em) {
+    const r = P.boneReport(em);
+    if (!r.total) return { cls: "bad", text: "No body parts" };
+    if (r.mapped === 0) return { cls: "bad", text: "Won't move" };
+    if (r.ignored.length) return { cls: "warn", text: `${r.ignored.length} part${r.ignored.length > 1 ? "s" : ""} unused` };
+    return { cls: "ok", text: "Ready" };
+  }
+  let toastTimer = 0;
+  function toast(msg, action, onAction) {
+    $("toast-msg").textContent = msg;
+    const b = $("toast-action"); b.hidden = !action; b.textContent = action || "";
+    b.onclick = () => { $("toast").hidden = true; onAction && onAction(); };
+    $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, action ? 9000 : 5000);
+  }
+
+  // ------------------------------------------------------------ render: pack
+  function renderPack() {
+    renderIcon(); renderMenuStyle();
+    if (document.activeElement !== $("pack-name")) $("pack-name").value = project.packName;
+    if (document.activeElement !== $("item-name")) $("item-name").value = project.itemName;
+    $("version-pill").textContent = "v" + project.version.join(".");
+    $("pack-uuid").textContent = project.ids.bp;
+    $("pack-uuid").title = `Behavior pack ${project.ids.bp}\nResource pack ${project.ids.rp}`;
+    const folder = project.packName.replace(/[\\/:*?"<>|]/g, "").trim() || "Emotes";
+    $("help-bp").textContent = `${folder} BP`;
+    $("help-item").textContent = project.itemName || "Emote Book";
+    $("help-give").textContent = `/function emotes_${project.pid}/give`;
+  }
+
+  // ------------------------------------------------------------ render: list
+  function renderList() {
+    const ul = $("emote-list"), n = project.emotes.length;
+    $("emote-count").textContent = n ? `${n} in the menu` : "";
+    if (!n) { ul.innerHTML = `<li class="empty">No emotes yet. Each animation file you add becomes a button in the in-game menu.</li>`; return; }
+    ul.innerHTML = project.emotes.map((em, i) => {
+      const st = status(em);
+      return `<li class="emote" data-key="${em.key}" aria-current="${em.key === selected}">
+        <button class="pick" type="button" data-act="pick"><canvas class="li-icon" aria-hidden="true"></canvas><span class="name">${esc(em.name || "Untitled")}</span>
+          <span class="meta"><span>${em.loop ? "Loops" : "Once"} · ${secs(E.animLength(em.anim))}</span>
+          <span class="pill ${st.cls}">${st.text}</span></span></button>
+        <span class="order"><button type="button" data-act="up" aria-label="Move ${esc(em.name)} up" ${i === 0 ? "disabled" : ""}>▲</button>
+        <button type="button" data-act="down" aria-label="Move ${esc(em.name)} down" ${i === n - 1 ? "disabled" : ""}>▼</button></span></li>`;
+    }).join("");
+    ul.querySelectorAll("li.emote").forEach((li, i) => I.paint(li.querySelector(".li-icon"), project.emotes[i].icon || P.facePixels("smile"), 1));
+  }
+
+  // ------------------------------------------------------------ render: inspector
+  const GROUPS = [["Body", ["head", "body", "rightArm", "leftArm", "rightLeg", "leftLeg", "waist", "root"]],
+    ["Outer skin layer", ["hat", "jacket", "rightSleeve", "leftSleeve", "rightPants", "leftPants"]],
+    ["Other", ["cape", "rightItem", "leftItem"]]];
+  function boneSelect(src, target) {
+    const opts = GROUPS.map(([g, list]) => `<optgroup label="${g}">${list.map((b) => `<option value="${b}" ${b === target ? "selected" : ""}>${b}</option>`).join("")}</optgroup>`).join("");
+    return `<select data-bone="${esc(src)}" aria-label="Player body part for ${esc(src)}"><option value="" ${!target ? "selected" : ""}>Not used</option>${opts}</select>`;
+  }
+
+  function renderInspector() {
+    const el = $("inspector-body"), em = current();
+    $("insp-h").textContent = project.emotes.length ? "Selected emote" : "Getting started";
+    if (!em && !project.emotes.length) {
+      el.innerHTML = `<div class="fields"><p class="muted" style="margin:0">Three steps from Blockbench to Minecraft:</p>
+        <ol class="steps">
+          <li><b>Animate in Blockbench</b> on a player model, so the body parts are named head, body, arms and legs.</li>
+          <li><b>Export</b> with Animation → Export Animations, then add the <span class="mono">.animation.json</span> file here. Name each emote and check it in the preview.</li>
+          <li><b>Download the add-on</b> and open it on the computer with Minecraft Education.</li>
+        </ol></div>`;
+      return;
+    }
+    if (!em) { el.innerHTML = `<p class="empty">Pick an emote from the list to rename it, set looping and check its body parts.</p>`; return; }
+    const len = E.animLength(em.anim), lastKey = E.lastKeyTime(em.anim), r = P.boneReport(em);
+    const gap = len - lastKey;
+    const errs = E.molangErrors(em.anim);
+    const notes = [];
+    if (r.mapped === 0) notes.push(`<div class="note bad"><b>This emote won't move in Minecraft.</b> None of its body parts match the player. Pick a player part for each row below, or animate on Blockbench's player template.</div>`);
+    else if (r.ignored.length) notes.push(`<div class="note warn"><b>${r.ignored.length} part${r.ignored.length > 1 ? "s are" : " is"} not on the player</b> and will be left out. Choose a matching part below if it should move.</div>`);
+    if (r.dupes.length) notes.push(`<div class="note warn">More than one row drives <span class="mono">${r.dupes.map(esc).join(", ")}</span>. Only one will show in-game.</div>`);
+    if (em.loop && lastKey > 0 && gap > 0.005) notes.push(`<div class="note info"><span>The last keyframe is at ${secs(lastKey)} but the animation is ${secs(len)} long, so each loop pauses for ${secs(gap)}.</span><button class="btn" type="button" id="fix-gap">Trim to ${secs(lastKey)}</button></div>`);
+    if (errs.length) notes.push(`<div class="note warn"><b>Some Molang couldn't be previewed.</b> It will still be sent to Minecraft as written.<span class="mono">${errs.slice(0, 3).map(esc).join("<br>")}</span></div>`);
+
+    el.innerHTML = `<div class="fields">
+      <label class="field"><span>Name in the menu</span><input type="text" id="em-name" maxlength="32" value="${esc(em.name)}" autocomplete="off"></label>
+      <div class="field"><span>Menu icon</span>
+        <div class="icon-row">
+          <span class="slot"><canvas id="em-icon-thumb" aria-label="Menu icon for ${esc(em.name)}"></canvas></span>
+          <div class="icon-meta">
+            <b class="icon-src">${iconSourceText(em)}</b>
+            <div class="icon-actions">
+              <button class="btn" type="button" id="em-icon-best" aria-pressed="${em.iconSource === "auto"}" title="Snapshot the most expressive moment">Best pose</button>
+              <button class="btn" type="button" id="em-icon-frame" aria-pressed="${em.iconSource === "frame"}" title="Snapshot the frame showing in the preview">Use this frame</button>
+              <button class="btn" type="button" id="em-icon-edit" aria-pressed="${em.iconSource === "custom"}">Edit</button>
+            </div>
+          </div>
+        </div>
+        <details class="emoji-pick" ${em.iconSource === "face" ? "open" : ""}><summary>Or use an emoji</summary>
+          <div class="faces" role="group" aria-label="Pick a face">${P.FACE_ORDER.map((f) => `<button type="button" data-face="${f}" aria-label="${f} face" aria-pressed="${em.iconSource === "face" && em.face === f}"><canvas data-face-canvas="${f}"></canvas></button>`).join("")}</div>
+        </details>
+      </div>
+      <label class="switch"><input type="checkbox" id="em-loop" ${em.loop ? "checked" : ""}><span><b>Loop</b><small id="loop-help">${em.loop ? "Repeats until the player walks." : "Plays once, then the player returns to normal."}</small></span></label>
+      ${notes.join("")}
+      <div class="field"><span>Body parts</span>
+        <table class="bones"><thead><tr><th scope="col">In your file</th><th></th><th scope="col">Player part</th></tr></thead><tbody>
+        ${Object.keys(em.anim.bones || {}).map((b) => `<tr class="${em.map[b] ? "" : "unused"}"><td class="mono">${esc(b)}</td><td class="arrow">→</td><td>${boneSelect(b, em.map[b])}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">This animation has no bones.</td></tr>`}
+        </tbody></table></div>
+      <dl class="facts">
+        <dt>Length</dt><dd>${secs(len)}</dd>
+        <dt>From file</dt><dd class="mono">${esc(em.source.file)}</dd>
+        <dt>Animation</dt><dd class="mono">${esc(em.source.anim)}</dd>
+        <dt>Exported as</dt><dd class="mono">${esc(P.animIdFor(project, em))}</dd>
+      </dl>
+      <button class="btn danger" type="button" id="em-remove" style="justify-self:start">Remove emote</button>
+    </div>`;
+  }
+
+  function iconSourceText(em) {
+    if (em.iconSource === "auto") return `Pose snapshot · best moment (${secs(em.iconTime || 0)})`;
+    if (em.iconSource === "frame") return `Pose snapshot · frame at ${secs(em.iconTime || 0)}`;
+    if (em.iconSource === "custom") return "Your drawing";
+    return "Emoji";
+  }
+  function paintInspectorIcons() {
+    const em = current(); if (!em || !$("em-icon-thumb")) return;
+    I.paint($("em-icon-thumb"), em.icon, 1);
+    document.querySelectorAll("[data-face-canvas]").forEach((c) => I.paint(c, P.facePixels(c.dataset.faceCanvas), 1));
+  }
+
+  function renderProblems(show) {
+    const list = P.problems(project), ul = $("problems");
+    ul.innerHTML = list.map((p) => `<li>${esc(p)}</li>`).join("");
+    ul.hidden = !(show && list.length) && !(ul.dataset.shown && list.length);
+    if (show) ul.dataset.shown = "1";
+    if (!list.length) delete ul.dataset.shown;
+  }
+
+  let lastEmpty = null;
+  function renderStage() {
+    const em = current(), empty = !project.emotes.length;
+    $("stage-empty").hidden = !empty;
+    document.querySelector(".stage-title").hidden = empty;
+    $("transport").hidden = empty; $("play").disabled = !em; $("scrub").disabled = !em;
+    if (!em) { $("scrub").value = "0"; $("time").textContent = "0.00 / 0.00 s"; }
+    $("download").disabled = empty;
+    if (empty !== lastEmpty) { $("export-status").textContent = empty ? "Add at least one emote to download the add-on." : ""; lastEmpty = empty; }
+    $("stage-name").textContent = em ? em.name || "Untitled" : "No emote selected";
+    const pill = $("stage-loop");
+    pill.hidden = !em; if (em) { pill.className = "pill " + (em.loop ? "ok" : "warn"); pill.textContent = em.loop ? "Loops until walking" : "Plays once"; }
+  }
+
+  function renderAll() { renderPack(); renderList(); renderInspector(); paintInspectorIcons(); renderStage(); renderProblems(false); }
+
+  function select(key) {
+    selected = key;
+    preview.setEmote(current());
+    renderList(); renderInspector(); paintInspectorIcons(); renderStage();
+  }
+
+  // ------------------------------------------------------------ preview
+  const preview = V.createPreview($("stage"), window.THREE);
+
+  // ------------------------------------------------------------ pose snapshots (menu icons)
+  let snapper = null;
+  try { snapper = window.EmoteSnapshot.createSnapshotter(window.THREE); } catch { snapper = null; } // no WebGL: emoji faces only
+  /** Snapshot an emote for its menu icon: best pose when t is omitted, otherwise that exact frame */
+  function takeSnapshot(em, t) {
+    if (!snapper) return false;
+    const auto = t === undefined;
+    if (auto) t = snapper.bestTime(em);
+    try { em.icon = snapper.snap(em, t, skin.canvas, skin.slim); } catch { return false; }
+    em.iconSource = auto ? "auto" : "frame"; em.iconTime = t; em.face = null;
+    return true;
+  }
+  /** Keep snapshot icons in step with the skin and body-part matching */
+  function refreshSnapshots(only) {
+    for (const em of only ? [only] : project.emotes) {
+      if (em.iconSource === "auto") takeSnapshot(em);
+      else if (em.iconSource === "frame") takeSnapshot(em, Math.min(em.iconTime || 0, E.animLength(em.anim)));
+    }
+  }
+  function stageColors() {
+    const cs = getComputedStyle(document.documentElement);
+    preview.setColors(cs.getPropertyValue("--stage").trim(), cs.getPropertyValue("--stage-line").trim());
+  }
+  const themeChanged = () => requestAnimationFrame(() => { stageColors(); if ($("icon-dialog").open) iconEditor.redraw(); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeChanged);
+  new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  let scrubbing = false;
+  preview.onTime((t, len) => {
+    const s = $("scrub"); s.max = String(len);
+    if (!scrubbing) s.value = String(t);
+    $("time").textContent = `${t.toFixed(2)} / ${len.toFixed(2)} s`;
+  });
+  function setPlayButton() { const b = $("play"); b.textContent = preview.playing ? "❚❚" : "▶"; b.setAttribute("aria-label", preview.playing ? "Pause" : "Play"); }
+  $("play").onclick = () => { preview.playing ? preview.pause() : preview.play(); setPlayButton(); };
+  $("scrub").addEventListener("input", (e) => {
+    scrubbing = true; preview.pause(); setPlayButton(); preview.seek(+e.target.value);
+    const len = +e.target.max; $("time").textContent = `${(+e.target.value).toFixed(2)} / ${len.toFixed(2)} s`;
+  });
+  $("scrub").addEventListener("change", () => { scrubbing = false; });
+  $("reset-view").onclick = () => preview.resetView();
+
+  // ------------------------------------------------------------ skin
+  function applySkin() {
+    preview.setSkin(skin.canvas, skin.slim);
+    if (project && project.emotes.some((em) => em.iconSource === "auto" || em.iconSource === "frame")) {
+      refreshSnapshots(); renderList(); paintInspectorIcons();
+    }
+    $("arms-classic").setAttribute("aria-pressed", String(!skin.slim));
+    $("arms-slim").setAttribute("aria-pressed", String(skin.slim));
+    $("skin-reset").hidden = !skin.custom;
+  }
+  // With no skin of their own, each arm width shows its matching default skin
+  async function setArms(slim) {
+    skin.slim = slim;
+    if (!skin.custom) skin.canvas = await V.loadDefaultSkin(slim);
+    applySkin(); storeSkin();
+  }
+  $("arms-classic").onclick = () => setArms(false);
+  $("arms-slim").onclick = () => setArms(true);
+  $("skin-upload").onclick = () => $("skin-file").click();
+  $("skin-reset").onclick = async () => { skin.custom = false; skin.canvas = await V.loadDefaultSkin(skin.slim); applySkin(); storeSkin(); };
+  function storeSkin() {
+    try { localStorage.setItem(SKIN_STORE, JSON.stringify({ slim: skin.slim, data: skin.custom ? skin.canvas.toDataURL() : null })); } catch { /* not kept */ }
+  }
+  function skinFromImage(img) {
+    const w = img.width, h = img.height;
+    const ok = w >= 64 && w <= 4096 && w % 64 === 0 && (h === w || h * 2 === w);
+    if (!ok) throw new Error(`This image is ${w}×${h}. Skins must be square (64×64, 128×128, 256×256 and up) or the classic 2:1 layout (64×32).`);
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    cv.getContext("2d").drawImage(img, 0, 0); return cv;
+  }
+  function loadImage(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("That image couldn't be read.")); i.src = src; }); }
+  $("skin-file").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    try {
+      skin.canvas = skinFromImage(await loadImage(url)); skin.custom = true; applySkin(); storeSkin();
+      const w = skin.canvas.width; toast(w > 64 ? `Previewing your ${w}×${skin.canvas.height} HD skin.` : "Previewing with your skin.");
+    }
+    catch (err) { toast(err.message); }
+    finally { URL.revokeObjectURL(url); }
+  });
+  async function restoreSkin() {
+    try {
+      const s = JSON.parse(localStorage.getItem(SKIN_STORE) || "null");
+      if (s) { skin.slim = !!s.slim; if (s.data) { skin.canvas = skinFromImage(await loadImage(s.data)); skin.custom = true; } }
+    } catch { /* keep default */ }
+    if (!skin.custom) skin.canvas = await V.loadDefaultSkin(skin.slim);
+    applySkin();
+  }
+
+  // ------------------------------------------------------------ files in
+  function addAnimations(list) {
+    const added = [];
+    for (const { file, id, anim } of list) {
+      if (!anim || typeof anim !== "object") continue;
+      if (!anim.bones) anim.bones = {};
+      const em = P.emoteFromAnimation(id, anim, file, project.emotes);
+      project.emotes.push(em); added.push(em);
+    }
+    return added;
+  }
+
+  async function handleFiles(files) {
+    const added = [], errors = [];
+    for (const f of files) {
+      try {
+        if (/\.json$/i.test(f.name)) {
+          added.push(...addAnimations(E.parseAnimationFile(await f.text()).map((a) => ({ file: f.name, ...a }))));
+        } else if (/\.(mcaddon|mcpack|zip)$/i.test(f.name)) {
+          const res = await P.readAddon(window.JSZip, await f.arrayBuffer());
+          if (res.project) { openProject(res.project, f.name); continue; }
+          if (!res.animations.length) throw new Error("No animation files were found inside it.");
+          added.push(...addAnimations(res.animations));
+        } else {
+          throw new Error("Use .animation.json files exported from Blockbench, or a .mcaddon.");
+        }
+      } catch (err) {
+        errors.push(`${f.name}: ${err.message.replace(/^Unexpected token.*/, "this isn't valid JSON")}`);
+      }
+    }
+    if (added.length) {
+      added.forEach((em) => takeSnapshot(em));
+      save(); select(added[0].key); renderAll();
+      const bad = added.filter((em) => P.boneReport(em).mapped === 0).length;
+      toast(`Added ${added.length} emote${added.length > 1 ? "s" : ""}.` + (bad ? ` ${bad} need${bad > 1 ? "" : "s"} body parts matched.` : ""));
+    }
+    if (errors.length) toast(errors.join(" · "));
+  }
+
+  function openProject(p, fileName) {
+    P.ensureIcons(p);
+    const previous = project;
+    project = p; unsaved = false;
+    select(project.emotes[0] ? project.emotes[0].key : null); renderAll();
+    toast(`Opened ${fileName}: ${p.emotes.length} emote${p.emotes.length === 1 ? "" : "s"}.`, "Undo", () => {
+      project = previous; save(); select(project.emotes[0] ? project.emotes[0].key : null); renderAll();
+    });
+  }
+
+  $("add-files").onclick = () => $("add-file-input").click();
+  $("stage-add").onclick = () => $("add-file-input").click();
+  $("add-file-input").addEventListener("change", (e) => { const fs = [...e.target.files]; e.target.value = ""; handleFiles(fs); });
+  $("open-addon").onclick = () => $("open-addon-file").click();
+  $("open-addon-file").addEventListener("change", (e) => { const fs = [...e.target.files]; e.target.value = ""; handleFiles(fs); });
+  const drop = $("drop");
+  let dragDepth = 0;
+  window.addEventListener("dragenter", (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { dragDepth++; drop.classList.add("over"); } });
+  window.addEventListener("dragleave", () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) drop.classList.remove("over"); });
+  window.addEventListener("dragover", (e) => e.preventDefault());
+  window.addEventListener("drop", (e) => { e.preventDefault(); dragDepth = 0; drop.classList.remove("over"); if (e.dataTransfer.files.length) handleFiles([...e.dataTransfer.files]); });
+
+  // ------------------------------------------------------------ edits
+  $("version-up").onclick = () => {
+    const before = P.versionUp(project); save(); renderPack();
+    const row = document.querySelector(".pack-id"); row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1600);
+    toast(`Now v${project.version.join(".")} with new pack IDs. Your next download installs as a separate pack.`, "Undo", () => {
+      project.version = before.version; project.ids = before.ids; save(); renderPack();
+    });
+  };
+  function renderMenuStyle() {
+    const pixel = project.menuStyle !== "classic";
+    $("menu-pixel").setAttribute("aria-pressed", String(pixel));
+    $("menu-classic").setAttribute("aria-pressed", String(!pixel));
+    $("menu-style-help").textContent = pixel ? "Beta: emoji tiles in a Cleverlike frame." : "Minecraft's standard list, with emote icons.";
+  }
+  $("menu-pixel").onclick = () => { project.menuStyle = "pixel"; save(); renderMenuStyle(); };
+  $("menu-classic").onclick = () => { project.menuStyle = "classic"; save(); renderMenuStyle(); };
+  $("pack-name").addEventListener("input", (e) => { project.packName = e.target.value; save(); renderPack(); renderProblems(false); });
+  $("item-name").addEventListener("input", (e) => { project.itemName = e.target.value; save(); renderPack(); });
+
+  $("emote-list").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]"); if (!btn) return;
+    const key = btn.closest("li").dataset.key, i = project.emotes.findIndex((x) => x.key === key);
+    const act = btn.dataset.act;
+    if (act === "pick") return select(key);
+    const j = act === "up" ? i - 1 : i + 1;
+    if (j < 0 || j >= project.emotes.length) return;
+    [project.emotes[i], project.emotes[j]] = [project.emotes[j], project.emotes[i]];
+    save(); renderList();
+    document.querySelector(`li[data-key="${key}"] button[data-act="${act}"]`)?.focus();
+  });
+
+  const insp = $("inspector-body");
+  insp.addEventListener("input", (e) => {
+    const em = current(); if (!em) return;
+    if (e.target.id === "em-name") {
+      em.name = e.target.value;
+      em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em);
+      save(); renderList(); renderStage(); renderProblems(false);
+      const d = insp.querySelector(".facts dd:last-child"); if (d) d.textContent = P.animIdFor(project, em);
+    }
+  });
+  insp.addEventListener("change", (e) => {
+    const em = current(); if (!em) return;
+    if (e.target.id === "em-loop") {
+      em.loop = e.target.checked; preview.setEmote(em); save(); renderList(); renderInspector(); renderStage();
+      $("em-loop").focus();
+    } else if (e.target.dataset.bone !== undefined) {
+      em.map[e.target.dataset.bone] = e.target.value || null;
+      const focusBone = e.target.dataset.bone;
+      refreshSnapshots(em);
+      save(); renderList(); renderInspector(); paintInspectorIcons(); renderProblems(false);
+      insp.querySelector(`select[data-bone="${CSS.escape(focusBone)}"]`)?.focus();
+    }
+  });
+  insp.addEventListener("click", (e) => {
+    const em = current(); if (!em) return;
+    const faceBtn = e.target.closest("button[data-face]");
+    if (faceBtn) {
+      em.face = faceBtn.dataset.face; em.icon = P.facePixels(em.face); em.iconSource = "face"; save();
+      renderList(); renderInspector(); paintInspectorIcons();
+      insp.querySelector(`button[data-face="${em.face}"]`)?.focus();
+      return;
+    }
+    if (e.target.id === "em-icon-best" || e.target.id === "em-icon-frame") {
+      const ok = e.target.id === "em-icon-best" ? takeSnapshot(em) : takeSnapshot(em, preview.time);
+      if (!ok) { toast("Snapshots need WebGL, which isn't available in this browser."); return; }
+      save(); renderList(); renderInspector(); paintInspectorIcons();
+      $(e.target.id)?.focus();
+      toast(e.target.id === "em-icon-best" ? `Using the best pose from ${em.name} (${secs(em.iconTime)}).` : `Using the frame at ${secs(em.iconTime)} for ${em.name}.`);
+      return;
+    }
+    if (e.target.id === "em-icon-edit") {
+      const pose = em.iconSource === "auto" || em.iconSource === "frame";
+      iconEditor.open(em.icon, {
+        title: `Menu icon for ${em.name || "this emote"}`, previewLabel: "On the menu tile",
+        resetLabel: pose ? "Start from the snapshot" : "Start from the face",
+        resetPixels: () => (pose && snapper ? snapper.snap(em, em.iconTime || 0, skin.canvas, skin.slim) : P.facePixels(em.face || "smile")),
+        onSave: (px) => {
+          if (!px.some((c) => c)) { toast("The icon is empty, so it wasn't saved."); return; }
+          em.icon = px; em.face = null; em.iconSource = "custom"; save(); renderList(); renderInspector(); paintInspectorIcons();
+          toast(`Saved the menu icon for ${em.name}.`);
+        },
+      });
+      return;
+    }
+    if (e.target.id === "fix-gap") {
+      em.anim.animation_length = +E.lastKeyTime(em.anim).toFixed(4);
+      refreshSnapshots(em);
+      preview.setEmote(em); save(); renderList(); renderInspector(); paintInspectorIcons();
+      toast(`Trimmed ${em.name} to ${secs(em.anim.animation_length)}. The loop is now seamless.`);
+    } else if (e.target.id === "em-remove") {
+      const i = project.emotes.indexOf(em);
+      project.emotes.splice(i, 1); save();
+      const next = project.emotes[Math.min(i, project.emotes.length - 1)];
+      select(next ? next.key : null); renderAll();
+      toast(`Removed ${em.name}.`, "Undo", () => { project.emotes.splice(i, 0, em); save(); select(em.key); renderAll(); });
+    }
+  });
+
+  // ------------------------------------------------------------ export
+  const I = window.EmoteIcon;
+  const iconPixels = () => (I.isValid(project.icon) ? project.icon : I.bookPixels());
+  const iconPng = (size) => I.toPng(iconPixels(), size);
+
+  function renderIcon() {
+    I.paint($("icon-thumb"), iconPixels(), 1);
+    const custom = I.isValid(project.icon);
+    $("icon-kind").textContent = custom ? "Your design" : "Emote Book (default)";
+    $("icon-edit").textContent = custom ? "Edit icon" : "Design icon";
+    $("icon-default").hidden = !custom;
+  }
+  const iconEditor = I.createEditor({
+    dialog: $("icon-dialog"), grid: $("icon-grid"), tools: $("icon-tools"), palette: $("icon-palette"), recent: $("icon-recent"),
+    color: $("icon-color"), colorHex: $("icon-color-hex"), prev1: $("icon-prev1"), prev2: $("icon-prev2"),
+    undo: $("icon-undo"), clear: $("icon-clear"), book: $("icon-book"), importBtn: $("icon-import"), importFile: $("icon-import-file"),
+    save: $("icon-save"), cancel: $("icon-cancel"), title: $("icon-dialog-h"), prevCaption: $("icon-prev2-cap"),
+  }, (px) => {
+    const isBook = px.join() === I.bookPixels().join();
+    if (!px.some((c) => c)) { toast("The icon is empty, so it wasn't saved. Draw something or use the book."); return; }
+    project.icon = isBook ? null : px; save(); renderIcon();
+    toast(isBook ? "Using the Emote Book icon." : "Icon saved. It will be in your next download.");
+  });
+  $("icon-edit").onclick = () => iconEditor.open(project.icon);
+  $("icon-default").onclick = () => {
+    const prev = project.icon; project.icon = null; save(); renderIcon();
+    toast("Switched back to the Emote Book icon.", "Undo", () => { project.icon = prev; save(); renderIcon(); });
+  };
+
+  async function saveFile(base, blob) {
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch { dl = null; }
+    if (dl) {
+      try { await dl.save({ filename: `${base}.mcaddon`, data: blob }); return "mcaddon"; }
+      catch (err) {
+        const code = err && err.code;
+        if (code === "declined") return "declined";
+        if (code === "rate_limited") throw new Error("A download prompt is already open.");
+        if (code === "rejected_extension" || code === "extension_not_enabled" || code === "bad_request") {
+          try { await dl.save({ filename: `${base}.zip`, data: blob }); return "zip"; }
+          catch (err2) { if (err2 && err2.code === "declined") return "declined"; throw new Error((err2 && err2.message) || "The download was blocked."); }
+        }
+        // anything else: try a normal browser download below
+      }
+    }
+    // Generic binary type so no browser "helpfully" renames the file to .zip
+    const url = URL.createObjectURL(new Blob([blob], { type: "application/octet-stream" })), a = document.createElement("a");
+    a.href = url; a.download = `${base}.mcaddon`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return "mcaddon";
+  }
+
+  $("download").onclick = async () => {
+    const list = P.problems(project);
+    if (list.length) { renderProblems(true); $("export-status").textContent = "Fix the items above, then download again."; return; }
+    const btn = $("download"), st = $("export-status");
+    btn.disabled = true; st.textContent = "Building the add-on…";
+    const prev = project.version.slice();
+    P.bumpVersion(project);
+    try {
+      const emoteIcons = {};
+      for (const em of project.emotes) { const px = em.icon || P.facePixels("smile"); emoteIcons[em.key] = await I.toPng(px, I.dim(px)); }
+      const systemIcons = {};
+      for (const [k, px] of Object.entries(window.EmoteUIArt.system)) systemIcons[k] = await I.toPng(px, 16);
+      const assets = { itemIcon: await iconPng(16), packIcon: await iconPng(128), emoteIcons, systemIcons };
+      const blob = await P.buildAddon(window.JSZip, project, assets, "blob");
+      const base = `${(project.packName.replace(/[\\/:*?"<>|]/g, "").trim() || "Emotes")} v${project.version.join(".")}`;
+      const how = await saveFile(base, blob);
+      if (how === "declined") { project.version = prev; st.textContent = "Download cancelled. Nothing was saved."; }
+      else {
+        unsaved = false;
+        const kb = Math.max(1, Math.round(blob.size / 1024));
+        st.innerHTML = how === "zip"
+          ? `<span class="note warn" style="display:grid"><b>Saved as ${esc(base)}.zip (${kb} KB).</b>
+             <span>This viewer can't save .mcaddon files. Before importing, rename the file so it ends in <b>.mcaddon</b> instead of .zip. On Windows, turn on View → File name extensions first so you can see the ending.</span></span>`
+          : `Saved <b>${esc(base)}.mcaddon</b> (${kb} KB) with ${project.emotes.length} emote${project.emotes.length === 1 ? "" : "s"}.`;
+        $("install-help").open = true;
+      }
+    } catch (err) {
+      project.version = prev;
+      st.textContent = `The add-on couldn't be built: ${err.message}`;
+    } finally { btn.disabled = false; renderPack(); }
+  };
+
+  // ------------------------------------------------------------ boot
+  project = load();
+  stageColors();
+  restoreSkin();
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) preview.pause();
+  setPlayButton();
+  select(project.emotes[0] ? project.emotes[0].key : null);
+  renderAll();
+})();
+
+</script>
+</body>
+</html>
