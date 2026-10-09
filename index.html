@@ -183,6 +183,9 @@ button, input, select { font: inherit; color: inherit; }
 .field { display: grid; gap: 5px; min-width: 0; }
 .field > span { font-size: 0.82rem; font-weight: 700; }
 .field small { color: var(--muted); font-size: 0.78rem; }
+.field small.field-fit { color: var(--warn); font-weight: 600; }
+#emote-count.over { color: var(--bad); font-weight: 700; }
+.field small.field-fit:empty { display: none; }
 input[type="text"], select { width: 100%; min-width: 0; background: var(--field, var(--panel)); border: 1px solid var(--line); border-radius: var(--r); padding: 7px 10px; }
 input[type="text"]:focus, select:focus { border-color: var(--accent); }
 
@@ -356,11 +359,16 @@ input[type="color"] { width: 44px; height: 32px; border: 1px solid var(--line); 
  <div class="topbar-inner">
   <div class="brand">
     <svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
-      <rect x="3" y="2" width="10" height="12" fill="var(--book)"/>
-      <rect x="3" y="2" width="2" height="12" fill="var(--book-spine)"/>
-      <rect x="5" y="12" width="8" height="2" fill="var(--page)"/>
-      <rect x="7" y="5" width="4" height="4" fill="var(--gold)"/>
-      <rect x="8" y="6" width="2" height="1" fill="var(--book-spine)"/>
+      <rect x="5" y="2" width="8" height="10" fill="#6a3fa6"/>
+      <rect x="4" y="2" width="1" height="10" fill="#4b2a7a"/>
+      <rect x="4" y="12" width="1" height="2" fill="#2d1a47"/>
+      <rect x="5" y="12" width="8" height="1" fill="#efe8d6"/>
+      <rect x="5" y="13" width="8" height="1" fill="#bfbfbf"/>
+      <rect x="7" y="5" width="1" height="1" fill="#fed83d"/>
+      <rect x="10" y="5" width="1" height="1" fill="#fed83d"/>
+      <rect x="8" y="6" width="2" height="1" fill="#fed83d"/>
+      <rect x="7" y="7" width="4" height="1" fill="#fed83d"/>
+      <rect x="7" y="8" width="4" height="1" fill="#e0a92a"/>
     </svg>
     <div>
       <h1>Cleverlike <span>Emote Tool</span></h1>
@@ -832,7 +840,6 @@ window.EmoteStrings = {
 "{face} face": "Cara: {face}",
 "{item}: emote menu for {pack}": "{item}: menú de emotes de {pack}",
 "{n} icon couldn't be used and was replaced.|{n} icons couldn't be used and were replaced.": "{n} icono no se pudo usar y se reemplazó.|{n} iconos no se pudieron usar y se reemplazaron.",
-"{n} in the menu": "{n} en el menú",
 "{n} needs body parts matched.|{n} need body parts matched.": "{n} necesita asignar partes del cuerpo.|{n} necesitan asignar partes del cuerpo.",
 "{n} part unused|{n} parts unused": "{n} parte sin usar|{n} partes sin usar",
 "“{name}” has no body parts that match the player, so it would not move.": "«{name}» no tiene partes del cuerpo que coincidan con el jugador, así que no se movería.",
@@ -881,7 +888,13 @@ window.EmoteStrings = {
 "Undo your last change. Ctrl+Z works too.": "Deshace tu último cambio. También funciona Ctrl+Z.",
 "Use Minecraft's standard list of buttons.": "Usa la lista de botones estándar de Minecraft.",
 "Use this drawing as the icon.": "Usa este dibujo como icono.",
-"Use this emoji face as the menu icon.": "Usa esta cara de emoji como icono del menú."
+"Use this emoji face as the menu icon.": "Usa esta cara de emoji como icono del menú.",
+"Too long for the menu card, so it will show as “{short}”. About 10 letters fit.": "Es demasiado largo para la tarjeta del menú, así que se verá como «{short}». Caben unas 10 letras.",
+"Name too long": "Nombre muy largo",
+"Too long for the menu card. Pick the emote to see how it will show.": "Es demasiado largo para la tarjeta del menú. Elige el emote para ver cómo se verá.",
+"The menu holds up to {max} emotes. Remove {n} emote to download.|The menu holds up to {max} emotes. Remove {n} emotes to download.": "El menú admite hasta {max} emotes. Quita {n} emote para descargar.|El menú admite hasta {max} emotes. Quita {n} emotes para descargar.",
+"The menu holds up to {max} emotes, so {n} wasn't added.|The menu holds up to {max} emotes, so {n} weren't added.": "El menú admite hasta {max} emotes, así que no se añadió {n}.|El menú admite hasta {max} emotes, así que no se añadieron {n}.",
+"{n} of {max} in the menu": "{n} de {max} en el menú"
 },
 "fr": {
 "3D preview of the selected emote on a player model": "Aperçu 3D de l'emote sélectionné sur un modèle de joueur",
@@ -1099,7 +1112,6 @@ window.EmoteStrings = {
 "{face} face": "Visage : {face}",
 "{item}: emote menu for {pack}": "{item} : menu d'emotes de {pack}",
 "{n} icon couldn't be used and was replaced.|{n} icons couldn't be used and were replaced.": "{n} icône n'a pas pu être utilisée et a été remplacée.|{n} icônes n'ont pas pu être utilisées et ont été remplacées.",
-"{n} in the menu": "{n} dans le menu",
 "{n} needs body parts matched.|{n} need body parts matched.": "{n} doit avoir ses parties du corps associées.|{n} doivent avoir leurs parties du corps associées.",
 "{n} part unused|{n} parts unused": "{n} partie inutilisée|{n} parties inutilisées",
 "“{name}” has no body parts that match the player, so it would not move.": "« {name} » n'a aucune partie du corps correspondant au joueur, il ne bougerait donc pas.",
@@ -1148,7 +1160,13 @@ window.EmoteStrings = {
 "Undo your last change. Ctrl+Z works too.": "Annule ta dernière modification. Ctrl+Z fonctionne aussi.",
 "Use Minecraft's standard list of buttons.": "Utilise la liste de boutons standard de Minecraft.",
 "Use this drawing as the icon.": "Utilise ce dessin comme icône.",
-"Use this emoji face as the menu icon.": "Utilise ce visage emoji comme icône du menu."
+"Use this emoji face as the menu icon.": "Utilise ce visage emoji comme icône du menu.",
+"Too long for the menu card, so it will show as “{short}”. About 10 letters fit.": "Trop long pour la carte du menu, il s'affichera donc « {short} ». Environ 10 lettres tiennent.",
+"Name too long": "Nom trop long",
+"Too long for the menu card. Pick the emote to see how it will show.": "Trop long pour la carte du menu. Choisis l'emote pour voir comment il s'affichera.",
+"The menu holds up to {max} emotes. Remove {n} emote to download.|The menu holds up to {max} emotes. Remove {n} emotes to download.": "Le menu contient au maximum {max} emotes. Retire {n} emote pour télécharger.|Le menu contient au maximum {max} emotes. Retire {n} emotes pour télécharger.",
+"The menu holds up to {max} emotes, so {n} wasn't added.|The menu holds up to {max} emotes, so {n} weren't added.": "Le menu contient au maximum {max} emotes, donc {n} n'a pas été ajouté.|Le menu contient au maximum {max} emotes, donc {n} n'ont pas été ajoutés.",
+"{n} of {max} in the menu": "{n} sur {max} dans le menu"
 },
 "pt": {
 "3D preview of the selected emote on a player model": "Pré-visualização 3D do emote selecionado em um modelo de jogador",
@@ -1366,7 +1384,6 @@ window.EmoteStrings = {
 "{face} face": "Rosto: {face}",
 "{item}: emote menu for {pack}": "{item}: menu de emotes de {pack}",
 "{n} icon couldn't be used and was replaced.|{n} icons couldn't be used and were replaced.": "{n} ícone não pôde ser usado e foi substituído.|{n} ícones não puderam ser usados e foram substituídos.",
-"{n} in the menu": "{n} no menu",
 "{n} needs body parts matched.|{n} need body parts matched.": "{n} precisa ter as partes do corpo associadas.|{n} precisam ter as partes do corpo associadas.",
 "{n} part unused|{n} parts unused": "{n} parte não usada|{n} partes não usadas",
 "“{name}” has no body parts that match the player, so it would not move.": "“{name}” não tem partes do corpo que correspondam ao jogador, então não se moveria.",
@@ -1415,7 +1432,13 @@ window.EmoteStrings = {
 "Undo your last change. Ctrl+Z works too.": "Desfaz sua última alteração. Ctrl+Z também funciona.",
 "Use Minecraft's standard list of buttons.": "Usa a lista de botões padrão do Minecraft.",
 "Use this drawing as the icon.": "Usa este desenho como ícone.",
-"Use this emoji face as the menu icon.": "Usa este rosto de emoji como ícone do menu."
+"Use this emoji face as the menu icon.": "Usa este rosto de emoji como ícone do menu.",
+"Too long for the menu card, so it will show as “{short}”. About 10 letters fit.": "Longo demais para o cartão do menu, então vai aparecer como “{short}”. Cabem cerca de 10 letras.",
+"Name too long": "Nome longo demais",
+"Too long for the menu card. Pick the emote to see how it will show.": "Longo demais para o cartão do menu. Selecione o emote para ver como vai aparecer.",
+"The menu holds up to {max} emotes. Remove {n} emote to download.|The menu holds up to {max} emotes. Remove {n} emotes to download.": "O menu comporta até {max} emotes. Remova {n} emote para baixar.|O menu comporta até {max} emotes. Remova {n} emotes para baixar.",
+"The menu holds up to {max} emotes, so {n} wasn't added.|The menu holds up to {max} emotes, so {n} weren't added.": "O menu comporta até {max} emotes, então {n} não foi adicionado.|O menu comporta até {max} emotes, então {n} não foram adicionados.",
+"{n} of {max} in the menu": "{n} de {max} no menu"
 },
 "de": {
 "3D preview of the selected emote on a player model": "3D-Vorschau des ausgewählten Emotes an einem Spielermodell",
@@ -1633,7 +1656,6 @@ window.EmoteStrings = {
 "{face} face": "Gesicht: {face}",
 "{item}: emote menu for {pack}": "{item}: Emote-Menü für {pack}",
 "{n} icon couldn't be used and was replaced.|{n} icons couldn't be used and were replaced.": "{n} Symbol konnte nicht verwendet werden und wurde ersetzt.|{n} Symbole konnten nicht verwendet werden und wurden ersetzt.",
-"{n} in the menu": "{n} im Menü",
 "{n} needs body parts matched.|{n} need body parts matched.": "Bei {n} müssen Körperteile zugeordnet werden.|Bei {n} müssen Körperteile zugeordnet werden.",
 "{n} part unused|{n} parts unused": "{n} Teil ungenutzt|{n} Teile ungenutzt",
 "“{name}” has no body parts that match the player, so it would not move.": "„{name}“ hat keine Körperteile, die zum Spieler passen, und würde sich daher nicht bewegen.",
@@ -1682,7 +1704,13 @@ window.EmoteStrings = {
 "Undo your last change. Ctrl+Z works too.": "Macht deine letzte Änderung rückgängig. Strg+Z geht auch.",
 "Use Minecraft's standard list of buttons.": "Verwendet die normale Schaltflächenliste von Minecraft.",
 "Use this drawing as the icon.": "Diese Zeichnung als Symbol verwenden.",
-"Use this emoji face as the menu icon.": "Dieses Emoji-Gesicht als Menüsymbol verwenden."
+"Use this emoji face as the menu icon.": "Dieses Emoji-Gesicht als Menüsymbol verwenden.",
+"Too long for the menu card, so it will show as “{short}”. About 10 letters fit.": "Zu lang für die Menükarte, daher wird „{short}“ angezeigt. Etwa 10 Buchstaben passen.",
+"Name too long": "Name zu lang",
+"Too long for the menu card. Pick the emote to see how it will show.": "Zu lang für die Menükarte. Wähle das Emote aus, um zu sehen, wie es angezeigt wird.",
+"The menu holds up to {max} emotes. Remove {n} emote to download.|The menu holds up to {max} emotes. Remove {n} emotes to download.": "Das Menü fasst bis zu {max} Emotes. Entferne {n} Emote, um herunterzuladen.|Das Menü fasst bis zu {max} Emotes. Entferne {n} Emotes, um herunterzuladen.",
+"The menu holds up to {max} emotes, so {n} wasn't added.|The menu holds up to {max} emotes, so {n} weren't added.": "Das Menü fasst bis zu {max} Emotes, daher wurde {n} nicht hinzugefügt.|Das Menü fasst bis zu {max} Emotes, daher wurden {n} nicht hinzugefügt.",
+"{n} of {max} in the menu": "{n} von {max} im Menü"
 },
 "zh": {
 "3D preview of the selected emote on a player model": "所选表情动作在玩家模型上的 3D 预览",
@@ -1900,7 +1928,6 @@ window.EmoteStrings = {
 "{face} face": "{face}表情",
 "{item}: emote menu for {pack}": "{item}：{pack} 的表情动作菜单",
 "{n} icon couldn't be used and was replaced.|{n} icons couldn't be used and were replaced.": "{n} 个图标无法使用，已被替换。",
-"{n} in the menu": "菜单中有 {n} 个",
 "{n} needs body parts matched.|{n} need body parts matched.": "{n} 个需要匹配身体部位。",
 "{n} part unused|{n} parts unused": "{n} 个部位未使用",
 "“{name}” has no body parts that match the player, so it would not move.": "“{name}”没有与玩家匹配的身体部位，因此不会动。",
@@ -1949,7 +1976,13 @@ window.EmoteStrings = {
 "Undo your last change. Ctrl+Z works too.": "撤销上一次更改。也可以按 Ctrl+Z。",
 "Use Minecraft's standard list of buttons.": "使用 Minecraft 的标准按钮列表。",
 "Use this drawing as the icon.": "将此图画用作图标。",
-"Use this emoji face as the menu icon.": "将此表情符号用作菜单图标。"
+"Use this emoji face as the menu icon.": "将此表情符号用作菜单图标。",
+"Too long for the menu card, so it will show as “{short}”. About 10 letters fit.": "名称太长，菜单卡片上会显示为“{short}”。大约能放 10 个字母。",
+"Name too long": "名称太长",
+"Too long for the menu card. Pick the emote to see how it will show.": "名称太长，菜单卡片放不下。选择此表情动作即可查看显示效果。",
+"The menu holds up to {max} emotes. Remove {n} emote to download.|The menu holds up to {max} emotes. Remove {n} emotes to download.": "菜单最多容纳 {max} 个表情动作。请移除 {n} 个后再下载。",
+"The menu holds up to {max} emotes, so {n} wasn't added.|The menu holds up to {max} emotes, so {n} weren't added.": "菜单最多容纳 {max} 个表情动作，因此有 {n} 个未添加。",
+"{n} of {max} in the menu": "菜单中 {n}/{max} 个"
 }
 };
 
@@ -2725,7 +2758,7 @@ window.EmoteStrings = {
 
 /* Generated by art/gen_ui_art.py — pixel art for the emoji emote menu. */
 (function (G) {
-  G.EmoteUIArt = {"textures":{"panel":"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAhElEQVR4nGNkgAItKYH/DFQE1559YGRgYGBggRn+TL+HmuYzaDGU/L/27AMjI8xweTUdqhl+59g6BlYRNQapiyUQH8DA69cvqGYJDKBY8O39G6pbwER1E0ctGLVg1IJRC0YtGIoWwCucO8fW0cQCRgYG2lT6UhdLGK49+8DICBOgVbMFADERJaVvx8UZAAAAAElFTkSuQmCC","stripe":"iVBORw0KGgoAAAANSUhEUgAAACgAAAADCAYAAADhlU2YAAAAI0lEQVR4nGMU91/0n4HG4HlePE6599l1ePUyUdsx1AaD3oEA6VcFmZAs5BoAAAAASUVORK5CYII=","tile":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAxElEQVR4nO3WIROCMBjG8WeehTYrNo60RQKfhTUr1c+xSl2Tz0IwYvJsWLUZZ/De6SC6eYb9C7f3OH430sswS+TczmffdLre2efZHQgap1tID3K7WcIi5zZ2dKG1Ux+X1zMr/HPgmMi5Hc/H9yQromGyrLBaTCNh1BKMXAITmMAEJjCB/wgarSDLKjokywpGq9/fkAHA0Ld2tz8AALz9JkD094xWqJuOua3NaOW9ECr6LuWW06Fvg27c8+qmYx4YCyaIegIDb5MW3p/c+gAAAABJRU5ErkJggg==","tile_hover":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAA0ElEQVR4nGNkQANaUgL/0cUoAdeefWBE5sM5MIuu3pxBTfsYtNUzUCxmhFlGbYuwWXzt2QdGFrjI230QWn4mA8OXlQg+lQGjlpTA/6vHwhAiwk40s0zbahUDE4YojSyDAUwLaQxGLRy1cNTCUQtHLRy1cDBaOL+Ai0HbahXNLdK2WsUwv4CL/j5kZGBgYDjZJfU/ccI3BgYGBgaU9g0VACz05hdwMZiXPUO02uYXcKEooBaAmQsD8IbwyS4pqra40YF52TNEQxgZUNtimEUwAABrkTlwigwqRgAAAABJRU5ErkJggg==","tile_pressed":"iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAoElEQVR4nO3WsQ3CMBAF0H8RdZQ6I9hkASbwBKzAbkzAAjABuT6Na4sFQoGcxDjlXar7jeXfPNnVBw4O/Reu72ZJgGMqjOWSofF1lfTgL/cCpoxJQ3swx0Snpfm8f+fwBKbbehcOub6bx4dbm/ashvnAaKpWCcupQeUYaKCBBhpooIFAwzGRD6wO+cDgmOjwF9a7dDuoBJJ/r9il22gv7y+VuTL+FOzkNAAAAABJRU5ErkJggg==","close":"iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAXklEQVR4nGNkYGBg0JIS+M+AA1x79oGRRUtK4P9D6TRcahi0GGb9Z4JxvpzqRJFE5sMV8ZiVwyW+nOpk4DErx1SErBBZAYYimAJ0q5nQFaBbjeEmdKthgJGBgXA4AQCbRyeLX4vyAwAAAABJRU5ErkJggg==","close_hover":"iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAXUlEQVR4nGNkYGBg0JIS+M+AA1x79oGRRUtK4P9hvnxcahhsGSb+Z4JxhK43oEgi8+GK3mk2wCWErjcwvNPEoghZIbICDEUwBehWM6ErQLcaw03oVsMAIwMD4XACAF4fJ3P8P8vvAAAAAElFTkSuQmCC","badge":"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0UlEQVR4nGNgoBAwYhPUkhL4j0382rMPGOpRBGAar17LQgg+OgBnantcwzAIztCSEviPohFNMzLQ9rgGN4QJqwKtaRiaYbajAyYU2x8dwGkrMri6QwvuXYQLkDRe3aGFVRNOF1ACWNAFooOw+xUGZndx4Tdg6TotBgbdo1g1f1svTdgFDAwMDNGqggwMDAwMfTpRDAwMDAxFV5ZhtZ2BAT0dIAUUuleQNZvmfIOnA6wuwGXbkxuY6rAm5dNTsGsOnPKNgYEBR1LGZhA6wJaZKAYAJm1OR501m/oAAAAASUVORK5CYII="},"faces":{"smile":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"grin":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#e8506a","#e8506a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wink":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#e8506a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"hearts":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#e23a4a","#fff07a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"cool":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"laugh":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#e8506a","#e8506a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wow":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#8a3418","#8a3418","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"silly":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#c83a54","#e8506a","#2a1a10","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#e8506a","#e8506a","#2a1a10","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","#2a1a10","#2a1a10","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""]},"system":{"stop":["","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","#2a1a10","#f5707c","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#f5707c","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","#2a1a10","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","",""],"cam_third":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#c4cee2","#2a1a10","#2a1a10","#2a1a10","#c4cee2","#c4cee2","#febd01","#c4cee2","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#bfe3ff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#bfe3ff","#bfe3ff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2b7fff","#2b7fff","#2b7fff","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","#2a1a10","#2a1a10","#9aa8c4","#9aa8c4","#9aa8c4","#9aa8c4","#2a1a10","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"cam_mine":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","#2a1a10","#c4cee2","#c4cee2","#c4cee2","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","#2a1a10","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#2a1a10","","","#2a1a10","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#a8e6b2","#2a1a10","#2a1a10","#2a1a10","#a8e6b2","#a8e6b2","#febd01","#a8e6b2","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#bfe3ff","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#bfe3ff","#bfe3ff","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2f9a4a","#2f9a4a","#2f9a4a","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","#2a1a10","#2a1a10","#7ad08a","#7ad08a","#7ad08a","#7ad08a","#2a1a10","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]}};
+  G.EmoteUIArt = {"textures":{"panel":"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAVElEQVR4nGNkYGBg4NJL+89AA/Dt0ixGFi69tP9s0mbXaWEBAwPDfyYaGQwHoxaMWjBqwagFoxaMWjBqAVGAhYGBgeH77V00MZyZS4CBkYGBts0WAIeWDqZvCtoLAAAAAElFTkSuQmCC","stripe":"iVBORw0KGgoAAAANSUhEUgAAACgAAAACCAYAAAAqyZ49AAAAIElEQVR4nGMU91/0n4GO4HlePFbx99l1WMWZaOkYagAAQMEFlxAXQXwAAAAASUVORK5CYII=","rule":"iVBORw0KGgoAAAANSUhEUgAAAAQAAAABCAYAAAD5PA/NAAAAD0lEQVR4nGNkVwk7wYAEABGKAUv4D9UdAAAAAElFTkSuQmCC","card":"iVBORw0KGgoAAAANSUhEUgAAADAAAAA0CAYAAADMk7uRAAAAh0lEQVR4nO3asQ2DQBQE0T1EBL0QUtIV4jIoyXJEB8TEkJ57gGB00rwKdvTTX5JkWmpLh+59K+O01HZ9P/SWR+Y1baBHvGUAzQCaATQDaAbQDKAZQDOAZgDNAJoBNANoBtAMoBlAM4BmAM0AmgE0A2gG0AygGUAbk+Q8fvSOx7q/QEn6fjn7A0JIECHdgBjkAAAAAElFTkSuQmCC","card_hover":"iVBORw0KGgoAAAANSUhEUgAAADAAAAA0CAYAAADMk7uRAAAAkElEQVR4nO3aIQ5CMRQF0fsaHJYFkXTdEBbCDtBYHoaP/yAmTeaYVt5JbStJXpfqLGjMrlp1/OawXer8BGfs17djkmTAO/5mAM0AmgE0A2gG0AygGUAzgGYAzQCaATQDaAbQDKAZQDOAZgDNAJoBNANoBtAMoH1/qzzuV3LHbqfPufwLLP/haYzZRY/41Zhdb5cKEgNsoCjWAAAAAElFTkSuQmCC","card_pressed":"iVBORw0KGgoAAAANSUhEUgAAADAAAAA0CAYAAADMk7uRAAAAgUlEQVR4nO3asQ0CUQwE0bV1FdEAwa+b4BqgJEx0BXAEoy/Nixzu5K4k+bxqsqFeU7Xr+MtxHfU4yR0/m/czSdLwjr8ZQDOAZgDNAJoBNANoBtAMoBlAM4BmAM0AmgE0A2gG0AygGUAzgGYAzQCaATQDaAbQtn946l5T9Ii7ek19AbU/D2j34AWxAAAAAElFTkSuQmCC","bar":"iVBORw0KGgoAAAANSUhEUgAAAGQAAAASCAYAAACtmXuIAAAAaElEQVR4nO3ZMRHAIBQE0f8zDCJSoSIiEIwedNCQIlUUsMU+BTez5WVERG19h45bc2Spre9yP6e36LOv0wv0ZxAYg8AYBMYgMAaBMQiMQWAMAmMQGIPAGATGIDAGgTEITEZ4UFGsOfIFLHYK56bLJVwAAAAASUVORK5CYII=","bar_hover":"iVBORw0KGgoAAAANSUhEUgAAAGQAAAASCAYAAACtmXuIAAAAZ0lEQVR4nO3ZQRGAMBAEwb0UMnCDAgSiAQWxluONgsxjWsFWzXMrSdasjrYbV9exZvX5vLu3KMmad4/dI/RnEBiDwBgExiAwBoExCIxBYAwCYxAYg8AYBMYgMAaBMQhMJR5UFOPq+gC14Q9TLf5zWgAAAABJRU5ErkJggg==","bar_stop_hover":"iVBORw0KGgoAAAANSUhEUgAAAGQAAAASCAYAAACtmXuIAAAAaElEQVR4nO3ZMRHAIBQE0f8z6elToSsiEINCLKCAFKlQwBb7FNzMlpcREa3UFTquz5F3K3W95Tm9Rb91nV6gnUFgDAJjEBiDwBgExiAwBoExCIxBYAwCYxAYg8AYBMYgMBnhQUXR58gPSEgLQ/z/ofAAAAAASUVORK5CYII=","bar_pressed":"iVBORw0KGgoAAAANSUhEUgAAAGQAAAASCAYAAACtmXuIAAAAaUlEQVR4nO3ZoRGAMBQE0fuICCQVpB4Kph4qQCJigqaCrNhXwc2svEqS1s8ZLTfuq6r1c9Z+rN6iJPN9sq0eoT+DwBgExiAwBoExCIxBYAwCYxAYg8AYBMYgMAaBMQiMQWAq8aCiGPdVH5HJDJGmzGw0AAAAAElFTkSuQmCC","close":"iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAJ0lEQVR4nGNgGNxgx4VP/4kRw6mAoGJkhbgUMxFlAtWcRJanBx4AAI3iIr1KIV2zAAAAAElFTkSuQmCC","close_hover":"iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAYElEQVR4nL2RuRHAMAgEwaHVi9WVVZPoSvQiUjsi4Alw4guZ3eEYEADgvO4HChEmxCqsOb7AQdhrBsDPjND6MMBeE1ofRkhvUMnDYUMlQdAavl4q+M6Z9MMfhAmrsDDhCwSPJ3AbCM5CAAAAAElFTkSuQmCC"},"faces":{"smile":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"grin":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#e8506a","#e8506a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wink":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#f58a5a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f58a5a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#e8506a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"hearts":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#e23a4a","#fff07a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#e23a4a","#2a1a10","","","","#2a1a10","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#e23a4a","#ff8a96","#e23a4a","#e23a4a","#e23a4a","#2a1a10","","","#2a1a10","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#e23a4a","#e23a4a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#e23a4a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"cool":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#6a7a9a","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"laugh":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#4ab8f0","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#4ab8f0","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#e8506a","#e8506a","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"wow":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffffff","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#5a2410","#8a3418","#8a3418","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""],"silly":["","","","","","","","","","","","","","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#2a1a10","","","","","","#2a1a10","#fff07a","#fff07a","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","","#2a1a10","#fff07a","#fff07a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","","#2a1a10","#fff07a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#ffd23a","#ffd23a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#5a2410","#f5ae1a","#f5ae1a","#2a1a10","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#c83a54","#e8506a","#2a1a10","#f5ae1a","#f5ae1a","#2a1a10","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#ffd23a","#2a1a10","#e8506a","#e8506a","#e8506a","#2a1a10","#f5ae1a","#2a1a10","","","","","#2a1a10","#ffd23a","#ffd23a","#ffd23a","#f5ae1a","#f5ae1a","#2a1a10","#2a1a10","#2a1a10","#d9861a","#d9861a","#2a1a10","","","","","","#2a1a10","#2a1a10","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#f5ae1a","#d9861a","#2a1a10","#2a1a10","","","","","","","","","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","#2a1a10","","","","","","","","","","","","","","","","","","","","",""]},"system":{"stop":["","","","","","","","","","","","","","","","","","","","","","","#7a1424","#7a1424","#7a1424","#7a1424","","","","","","","","","","","#7a1424","#7a1424","#f27482","#f27482","#f27482","#f27482","#7a1424","#7a1424","","","","","","","","#7a1424","#f27482","#f27482","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#7a1424","","","","","","#7a1424","#f27482","#f27482","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#7a1424","","","","","#7a1424","#f27482","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#7a1424","","","","#7a1424","#f27482","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#c22a3c","#7a1424","","","#7a1424","#f27482","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#c22a3c","#7a1424","","","#7a1424","#f27482","#e23a4a","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#e23a4a","#c22a3c","#7a1424","","","#7a1424","#f27482","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#c22a3c","#7a1424","","","","#7a1424","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#c22a3c","#7a1424","","","","","#7a1424","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#c22a3c","#c22a3c","#7a1424","","","","","","#7a1424","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#e23a4a","#c22a3c","#c22a3c","#7a1424","","","","","","","","#7a1424","#7a1424","#c22a3c","#c22a3c","#c22a3c","#c22a3c","#7a1424","#7a1424","","","","","","","","","","","#7a1424","#7a1424","#7a1424","#7a1424","","","","","","","","","","","","","","","","","","","","","",""],"cam_third":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#0a2e66","#0a2e66","#0a2e66","#0a2e66","","","","","","","","","","","","","#0a2e66","#eef2f8","#eef2f8","#0a2e66","","","","","","","","","","","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","","","#0a2e66","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#eef2f8","#0a2e66","","","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#cfd8e6","#cfd8e6","#febd01","#cfd8e6","#0a2e66","","","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","#a8d0ff","#a8d0ff","#2b7fff","#2b7fff","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","","","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","#a8d0ff","#2b7fff","#2b7fff","#2b7fff","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","","","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","","","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","#2b7fff","#2b7fff","#2b7fff","#2b7fff","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","","","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#cfd8e6","#cfd8e6","#cfd8e6","#cfd8e6","#0a2e66","","","#0a2e66","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#aebbd0","#0a2e66","","","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],"cam_mine":["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","","","","","","","","","#0a2e66","#0a2e66","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#0a2e66","#0a2e66","","","","","","#0a2e66","#ffffff","#ffffff","#ffffff","#ffffff","#2b7fff","#2b7fff","#ffffff","#ffffff","#ffffff","#ffffff","#0a2e66","","","","#0a2e66","#ffffff","#ffffff","#ffffff","#ffffff","#2b7fff","#ffffff","#072456","#2b7fff","#ffffff","#ffffff","#ffffff","#ffffff","#0a2e66","","","#0a2e66","#ffffff","#ffffff","#ffffff","#ffffff","#2b7fff","#072456","#072456","#2b7fff","#ffffff","#ffffff","#ffffff","#ffffff","#0a2e66","","","","#0a2e66","#ffffff","#ffffff","#ffffff","#ffffff","#2b7fff","#2b7fff","#ffffff","#ffffff","#ffffff","#ffffff","#0a2e66","","","","","","#0a2e66","#0a2e66","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#0a2e66","#0a2e66","","","","","","","","","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","#0a2e66","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]}};
 })(typeof window !== "undefined" ? window : globalThis);
 
 
@@ -2738,7 +2771,7 @@ window.EmoteStrings = {
   const MENU_FLAG = "§e§m§o§t§r";
 
   function menuUi(pid) {
-    const ns = `emote_menu_${pid}`, tex = `textures/ui/emote_${pid}`;
+    const ns = `emote_menu_${pid}`, tex = `textures/ui/emote_${pid}`, itemTex = `textures/items/emote_book_${pid}`;
     const coll = (name, override) => ({ binding_name: name, ...(override ? { binding_name_override: override } : {}), binding_type: "collection", binding_collection_name: "form_buttons" });
     const has = `(not ((#title_text - '${MENU_FLAG}') = #title_text))`;
     const hasNot = `((#title_text - '${MENU_FLAG}') = #title_text)`;
@@ -2759,61 +2792,106 @@ window.EmoteStrings = {
       },
     };
 
-    const face = (state, iconY, labelY) => ({
-      type: "image", texture: `${tex}/${state}`, size: ["100%", "100%"], layer: 1,
+    // Control buttons (Stop, camera) use icons named textures/ui/emote_<pid>/icons/_<name>
+    const isCtrl = `(not ((#form_button_texture - '/icons/_') = #form_button_texture))`;
+    const isStop = `(not ((#form_button_texture - '/icons/_stop') = #form_button_texture))`;
+    const viewIf = (expr, extra = []) => [coll("#form_button_texture"), ...extra, { binding_type: "view", source_property_name: expr, target_property_name: "#visible" }];
+    const iconBinds = [coll("#form_button_texture", "#texture"), coll("#form_button_texture_file_system", "#texture_file_system")];
+    const NAVY_TEXT = [0.11, 0.16, 0.24];
+
+    // An emote card: picture on top, the name in its own strip at the bottom (never over the picture)
+    const card = (state, lift) => ({
+      type: "image", texture: `${tex}/${state}`, size: [48, 52], layer: 1,
       controls: [
-        { icon: { type: "image", size: [32, 32], anchor_from: "top_middle", anchor_to: "top_middle", offset: [0, iconY], layer: 2,
-          bindings: [coll("#form_button_texture", "#texture"), coll("#form_button_texture_file_system", "#texture_file_system")] } },
-        { label: { type: "label", text: "#form_button_text", size: ["100% - 6px", 10], anchor_from: "bottom_middle", anchor_to: "bottom_middle",
-          offset: [0, labelY], text_alignment: "center", font_scale_factor: 0.8, color: [0.23, 0.14, 0.07], layer: 2,
-          bindings: [coll("#form_button_text")] } },
+        { icon: { type: "image", size: [32, 32], anchor_from: "top_middle", anchor_to: "top_middle", offset: [0, 4 + lift], layer: 2, bindings: iconBinds } },
+        // one line only: the tool shortens long names, and this clip keeps any second line off the picture
+        { label_clip: { type: "panel", size: ["100% - 4px", 8], anchor_from: "bottom_middle", anchor_to: "bottom_middle", offset: [0, -5], clips_children: true, layer: 2,
+          controls: [{ label: { type: "label", text: "#form_button_text", size: ["100%", "default"], anchor_from: "top_middle", anchor_to: "top_middle",
+            text_alignment: "center", font_scale_factor: 0.75, color: NAVY_TEXT, layer: 2, bindings: [coll("#form_button_text")] } }] } },
       ],
+    });
+    // A bottom-bar button: icon + label side by side
+    const barFace = (texName, lift, cond) => ({
+      type: "image", texture: `${tex}/${texName}`, size: [100, 18], layer: 1,
+      ...(cond ? { bindings: viewIf(cond) } : {}),
+      controls: [{ row: { type: "stack_panel", orientation: "horizontal", size: ["100%c", 16], anchor_from: "center", anchor_to: "center", offset: [0, lift], layer: 2,
+        controls: [
+          { icon: { type: "image", size: [16, 16], layer: 2, bindings: iconBinds } },
+          { gap: { type: "panel", size: [5, 16] } },
+          { text_box: { type: "panel", size: ["100%c", 16], controls: [
+            { label: { type: "label", text: "#form_button_text", size: ["default", "default"], anchor_from: "left_middle", anchor_to: "left_middle", offset: [0, 1],
+              color: [0.92, 0.95, 1.0], shadow: true, layer: 2, bindings: [coll("#form_button_text")] } }] } },
+        ] } }],
     });
 
     const menu = {
       namespace: ns,
       main: { type: "panel", size: ["100%", "100%"], controls: [{ [`window@${ns}.window`]: {} }] },
-      window: { type: "image", texture: `${tex}/panel`, size: [200, "100%c"], layer: 2, controls: [{ [`content@${ns}.content`]: {} }] },
+      window: { type: "image", texture: `${tex}/panel`, size: [216, "100%c"], layer: 2, controls: [
+        { stripe: { type: "image", texture: `${tex}/stripe`, keep_ratio: false, size: ["100% - 2px", 2], anchor_from: "top_middle", anchor_to: "top_middle", offset: [0, 1], layer: 3 } },
+        { [`content@${ns}.content`]: {} },
+      ] },
       content: {
-        type: "stack_panel", orientation: "vertical", size: ["100%", "100%c"],
+        type: "stack_panel", orientation: "vertical", size: [204, "100%c"], anchor_from: "top_middle", anchor_to: "top_middle",
         controls: [
-          { pad_top: { type: "panel", size: ["100%", 6] } },
+          { pad_top: { type: "panel", size: ["100%", 5] } },
           { [`header@${ns}.header`]: {} },
+          { rule_top: { type: "image", texture: `${tex}/rule`, keep_ratio: false, size: ["100%", 1] } },
+          { pad_grid: { type: "panel", size: ["100%", 6] } },
           { grid_area: { type: "panel", size: ["100%", "100%c"], controls: [{ [`grid@${ns}.grid`]: {} }] } },
-          { pad_bottom: { type: "panel", size: ["100%", 14], controls: [
-            { stripe: { type: "image", texture: `${tex}/stripe`, size: ["100% - 12px", 3], anchor_from: "bottom_middle", anchor_to: "bottom_middle", offset: [0, -5], layer: 3 } }] } },
+          { pad_bar: { type: "panel", size: ["100%", 2] } },
+          { rule_bar: { type: "image", texture: `${tex}/rule`, keep_ratio: false, size: ["100%", 1] } },
+          { pad_bar2: { type: "panel", size: ["100%", 6] } },
+          { [`bar@${ns}.bar`]: {} },
+          { pad_bottom: { type: "panel", size: ["100%", 6] } },
         ],
       },
       header: {
-        type: "panel", size: ["100%", 20],
+        type: "panel", size: ["100%", 22],
         controls: [
-          { title_row: { type: "stack_panel", orientation: "horizontal", size: ["100%c", 12], anchor_from: "center", anchor_to: "center",
-            controls: [
-              { badge: { type: "image", texture: `${tex}/badge`, size: [12, 12], layer: 3 } },
-              { gap: { type: "panel", size: [5, 12] } },
-              { title: { type: "label", text: "#title_text", size: ["default", 12], color: [1.0, 0.74, 0.0], shadow: true, layer: 3,
-                bindings: [{ binding_name: "#title_text" }] } },
-            ] } },
-          { [`close@${ns}.close_button`]: { anchor_from: "right_middle", anchor_to: "right_middle", offset: [-8, 0] } },
+          { badge: { type: "image", texture: itemTex, size: [16, 16], anchor_from: "left_middle", anchor_to: "left_middle", offset: [0, 0], layer: 3 } },
+          { title: { type: "label", text: "#title_text", size: ["default", "default"], anchor_from: "left_middle", anchor_to: "left_middle", offset: [21, 0],
+            color: [1.0, 1.0, 1.0], shadow: true, layer: 3, bindings: [{ binding_name: "#title_text" }] } },
+          { [`close@${ns}.close_button`]: { anchor_from: "right_middle", anchor_to: "right_middle", offset: [0, 0] } },
         ],
       },
+      // Emote cards (48 wide, 4px gaps: 4 × 48 + 3 × 4 = 204, flush with the content edges): the first (buttons - 2) items; the last two are the controls, shown in the bar instead
       grid: {
-        type: "grid", size: [180, "default"], anchor_from: "top_middle", anchor_to: "top_middle",
+        type: "grid", size: [208, "default"], anchor_from: "top_left", anchor_to: "top_left",
         grid_item_template: `${ns}.cell`, grid_rescaling_type: "horizontal", collection_name: "form_buttons",
-        bindings: [{ binding_name: "#form_button_length", binding_name_override: "#maximum_grid_items" }],
+        bindings: [{ binding_name: "#form_button_length" },
+          { binding_type: "view", source_property_name: "(#form_button_length - 2)", target_property_name: "#maximum_grid_items" }],
       },
-      cell: { type: "panel", size: [60, 60], controls: [{ [`tile@${ns}.tile`]: {} }] },
+      cell: { type: "panel", size: [52, 56], controls: [{ [`tile@${ns}.tile`]: {} }] },
       "tile@common.button": {
-        size: [56, 56], anchor_from: "center", anchor_to: "center", $pressed_button_name: "button.form_button_click",
+        size: [48, 52], anchor_from: "top_left", anchor_to: "top_left", $pressed_button_name: "button.form_button_click",
+        controls: [{ default: card("card", 0) }, { hover: card("card_hover", -1) }, { pressed: card("card_pressed", 1) }],
+        bindings: [{ binding_type: "collection_details", binding_collection_name: "form_buttons" }],
+      },
+      // Stop + camera: same button list, only the control items are visible (hidden ones take no space)
+      bar: {
+        type: "stack_panel", orientation: "horizontal", size: [208, 18], anchor_from: "top_left", anchor_to: "top_left",
+        factory: { name: "buttons", control_name: `${ns}.bar_item` }, collection_name: "form_buttons",
+        bindings: [{ binding_name: "#form_button_length", binding_name_override: "#collection_length" }],
+      },
+      bar_item: {
+        type: "panel", size: [104, 18], bindings: viewIf(isCtrl),
+        controls: [{ [`button@${ns}.bar_button`]: {} }],
+      },
+      "bar_button@common.button": {
+        size: [100, 18], anchor_from: "left_middle", anchor_to: "left_middle", $pressed_button_name: "button.form_button_click",
         controls: [
-          { default: face("tile", 6, -10) },
-          { hover: face("tile_hover", 6, -10) },
-          { pressed: face("tile_pressed", 8, -8) },
+          { default: barFace("bar", 0) },
+          { hover: { type: "panel", size: [100, 18], controls: [
+            { normal: barFace("bar_hover", 0, `(not ${isStop})`) },
+            { stop: barFace("bar_stop_hover", 0, isStop) },
+          ] } },
+          { pressed: barFace("bar_pressed", 1) },
         ],
         bindings: [{ binding_type: "collection_details", binding_collection_name: "form_buttons" }],
       },
       "close_button@common.button": {
-        size: [18, 18], $pressed_button_name: "button.menu_exit",
+        size: [12, 12], $pressed_button_name: "button.menu_exit",
         controls: [
           { default: { type: "image", texture: `${tex}/close`, size: ["100%", "100%"], layer: 3 } },
           { hover: { type: "image", texture: `${tex}/close_hover`, size: ["100%", "100%"], layer: 3 } },
@@ -2875,7 +2953,7 @@ window.EmoteStrings = {
 
   /** Emote record from one animation in an uploaded file */
   function emoteFromAnimation(animId, anim, fileName, existing) {
-    const name = E.prettyName(animId);
+    const name = E.prettyName(animId).toUpperCase();   // all caps by default: reads cleaner on the menu cards
     const face = nextFace(existing);
     return {
       key: shortId(), name, slug: uniqueSlug(E.slugify(name), existing),
@@ -2896,6 +2974,24 @@ window.EmoteStrings = {
     const targets = names.map((n) => em.map[n]).filter(Boolean);
     const dupes = targets.filter((t, i) => targets.indexOf(t) !== i);
     return { total: names.length, mapped: names.length - ignored.length, ignored, dupes: [...new Set(dupes)] };
+  }
+
+  // ---- Menu card labels. Minecraft's default font: most characters advance 6px; these are narrower/wider.
+  const MC_ADV = { " ": 4, "!": 2, "\"": 4, "'": 2, "(": 4, ")": 4, "*": 4, ",": 2, ".": 2, ":": 2, ";": 2, "<": 5, ">": 5, "@": 7,
+    "I": 4, "[": 4, "]": 4, "`": 3, "f": 5, "i": 2, "k": 5, "l": 3, "t": 4, "{": 4, "|": 2, "}": 4, "~": 7 };
+  const CARD_TEXT_MAX = 58;   // card label: 44px wide at font_scale 0.75 → 58 unscaled font pixels
+  function mcTextWidth(s) {
+    let w = 0;
+    for (const ch of String(s)) w += MC_ADV[ch] ?? (/[\u2E80-\u9FFF\uAC00-\uD7AF\uFF00-\uFFEF]/.test(ch) ? 9 : 6);
+    return Math.max(0, w - 1);   // no spacing after the last character
+  }
+  /** The name as it fits on one line of a menu card: {text, fits}. Too-long names end in ".." */
+  function fitCardLabel(name) {
+    const s = String(name || "").trim();
+    if (mcTextWidth(s) <= CARD_TEXT_MAX) return { text: s, fits: true };
+    const chars = [...s];
+    while (chars.length && mcTextWidth(chars.join("").trimEnd() + "..") > CARD_TEXT_MAX) chars.pop();
+    return { text: chars.join("").trimEnd() + "..", fits: false };
   }
 
   function animIdFor(project, em) { return `animation.emote.${project.pid}_${em.slug}`; }
@@ -2949,9 +3045,12 @@ window.EmoteStrings = {
     return out;
   }
 
+  const MAX_EMOTES = 12;   // 3 rows of 4 cards keeps the in-game menu on screen
   function problems(project) {
     const list = [];
     if (!project.emotes.length) list.push(t("Add at least one emote."));
+    const extra = project.emotes.length - MAX_EMOTES;
+    if (extra > 0) list.push(t("The menu holds up to {max} emotes. Remove {n} emote to download.|The menu holds up to {max} emotes. Remove {n} emotes to download.", { max: MAX_EMOTES, n: extra }));
     const F = G.EmoteFilter;
     for (const em of project.emotes) {
       const r = boneReport(em);
@@ -2989,7 +3088,7 @@ window.EmoteStrings = {
       const id = animIdFor(p, em);
       const anim = exportAnimation(em);
       put(`${RP}/animations/${String(i).padStart(2, "0")}_${em.slug}.animation.json`, { format_version: "1.10.0", animations: { [id]: anim } });
-      emoteData.push({ anim: id, name: em.name, loop: !!em.loop, length: anim.animation_length, icon: `textures/ui/emote_${p.pid}/icons/${em.slug}` });
+      emoteData.push({ anim: id, name: p.menuStyle !== "classic" ? fitCardLabel(em.name).text : em.name, loop: !!em.loop, length: anim.animation_length, icon: `textures/ui/emote_${p.pid}/icons/${em.slug}` });
     });
     const stopId = `animation.emote.${p.pid}__stop`;
     put(`${RP}/animations/zz_stop.animation.json`, { format_version: "1.10.0", animations: {
@@ -3098,7 +3197,7 @@ window.EmoteStrings = {
     return { animations };
   }
 
-  G.EmotePack = { FACE_ORDER, facePixels, ensureIcons, newProject, emoteFromAnimation, uniqueSlug, boneReport, problems, buildAddon, bumpVersion, versionUp, readAddon, animIdFor, exportAnimation };
+  G.EmotePack = { FACE_ORDER, facePixels, ensureIcons, newProject, emoteFromAnimation, uniqueSlug, boneReport, problems, buildAddon, bumpVersion, versionUp, readAddon, animIdFor, exportAnimation, mcTextWidth, fitCardLabel, MAX_EMOTES };
 })(typeof window !== "undefined" ? window : globalThis);
 
 
@@ -3473,7 +3572,7 @@ window.EmoteStrings = {
   const dim = (px) => Math.round(Math.sqrt(px.length));
 
   // The default Emote Book (also what the add-on used before custom icons)
-  const BOOK_RECTS = [["#6a3fa6", 3, 2, 10, 12], ["#4b2a7a", 3, 2, 2, 12], ["#efe8d6", 5, 12, 8, 2], ["#e0a92a", 7, 5, 4, 4], ["#4b2a7a", 8, 6, 2, 1]];
+  const BOOK_RECTS = [["#6a3fa6", 5, 2, 8, 10], ["#4b2a7a", 4, 2, 1, 10], ["#2d1a47", 4, 12, 1, 2], ["#efe8d6", 5, 12, 8, 1], ["#bfbfbf", 5, 13, 8, 1], ["#fed83d", 7, 5, 1, 1], ["#fed83d", 10, 5, 1, 1], ["#fed83d", 8, 6, 2, 1], ["#fed83d", 7, 7, 4, 1], ["#e0a92a", 7, 8, 4, 1]];  // purple book with a gold crown
   function bookPixels() {
     const px = new Array(N * N).fill("");
     for (const [c, x, y, w, h] of BOOK_RECTS) for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) px[j * N + i] = c;
@@ -3711,14 +3810,15 @@ window.EmoteStrings = {
   // ------------------------------------------------------------ render: list
   function renderList() {
     const ul = $("emote-list"), n = project.emotes.length;
-    $("emote-count").textContent = n ? t("{n} in the menu", { n }) : "";
+    $("emote-count").textContent = n ? t("{n} of {max} in the menu", { n, max: P.MAX_EMOTES }) : "";
+    $("emote-count").classList.toggle("over", n > P.MAX_EMOTES);
     if (!n) { ul.innerHTML = `<li class="empty">${t("No emotes yet. Each animation file you add becomes a button in the in-game menu.")}</li>`; return; }
     ul.innerHTML = project.emotes.map((em, i) => {
       const st = status(em);
       return `<li class="emote" data-key="${em.key}" aria-current="${em.key === selected}">
         <button class="pick" type="button" data-act="pick" data-tip="Select this emote to preview and edit it."><canvas class="li-icon" aria-hidden="true"></canvas><span class="name">${esc(em.name || t("Untitled"))}</span>
           <span class="meta"><span>${em.loop ? t("Loops") : t("Once")} · ${secs(E.animLength(em.anim))}</span>
-          <span class="pill ${st.cls}">${st.text}</span></span></button>
+          <span class="pill ${st.cls}">${st.text}</span>${longName(em) ? `<span class="pill warn" data-tip="Too long for the menu card. Pick the emote to see how it will show.">${t("Name too long")}</span>` : ""}</span></button>
         <span class="order"><button type="button" data-act="up" data-tip="Move this emote earlier in the menu." aria-label="${esc(t("Move {name} up", { name: em.name }))}" ${i === 0 ? "disabled" : ""}>▲</button>
         <button type="button" data-act="down" data-tip="Move this emote later in the menu." aria-label="${esc(t("Move {name} down", { name: em.name }))}" ${i === n - 1 ? "disabled" : ""}>▼</button></span></li>`;
     }).join("");
@@ -3759,7 +3859,7 @@ window.EmoteStrings = {
     if (errs.length) notes.push(`<div class="note warn">${t("<b>Some Molang couldn't be previewed.</b> It will still be sent to Minecraft as written.")}<span class="mono">${errs.slice(0, 3).map(esc).join("<br>")}</span></div>`);
 
     el.innerHTML = `<div class="fields">
-      <label class="field"><span>${t("Name in the menu")}</span><input type="text" id="em-name" maxlength="32" value="${esc(em.name)}" autocomplete="off" aria-invalid="${!!F.checkText(em.name)}">${F.checkText(em.name) ? `<small class="field-error" role="alert">${esc(T(F.checkText(em.name)))}</small>` : ""}</label>
+      <label class="field"><span>${t("Name in the menu")}</span><input type="text" id="em-name" maxlength="32" value="${esc(em.name)}" autocomplete="off" aria-invalid="${!!F.checkText(em.name)}" aria-describedby="em-name-fit">${F.checkText(em.name) ? `<small class="field-error" role="alert">${esc(T(F.checkText(em.name)))}</small>` : ""}<small class="field-fit" id="em-name-fit" aria-live="polite">${esc(fitHint(em.name))}</small></label>
       <div class="field"><span>${t("Menu icon")}</span>
         <div class="icon-row">
           <span class="slot"><canvas id="em-icon-thumb" aria-label="${esc(t("Menu icon for {name}", { name: em.name }))}"></canvas></span>
@@ -3949,6 +4049,7 @@ window.EmoteStrings = {
     const added = [];
     for (const { file, id, anim } of list) {
       if (!anim || typeof anim !== "object") continue;
+      if (project.emotes.length >= P.MAX_EMOTES) { skippedFull++; continue; }
       if (!anim.bones) anim.bones = {};
       const em = P.emoteFromAnimation(id, anim, file, project.emotes);
       project.emotes.push(em); added.push(em);
@@ -3956,8 +4057,10 @@ window.EmoteStrings = {
     return added;
   }
 
+  let skippedFull = 0;
   async function handleFiles(files) {
     const added = [], errors = [];
+    skippedFull = 0;
     for (const f of files) {
       try {
         if (/\.json$/i.test(f.name)) {
@@ -3978,7 +4081,7 @@ window.EmoteStrings = {
       let cleaned = 0;
       added.forEach((em, i) => {
         const r = F.sanitize(em.name);
-        if (r.removed) { cleaned++; em.name = r.text.trim() || t("Emote {n}", { n: project.emotes.length - added.length + i + 1 }); em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em); }
+        if (r.removed) { cleaned++; em.name = (r.text.trim() || t("Emote {n}", { n: project.emotes.length - added.length + i + 1 })).toUpperCase(); em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em); }
         takeSnapshot(em);
       });
 
@@ -3987,6 +4090,7 @@ window.EmoteStrings = {
       toast(t("Added {n} emote.|Added {n} emotes.", { n: added.length }) + (bad ? " " + t("{n} needs body parts matched.|{n} need body parts matched.", { n: bad }) : "")
         + (cleaned ? " " + t("Removed words that aren't allowed from {n} name.|Removed words that aren't allowed from {n} names.", { n: cleaned }) : ""));
     }
+    if (skippedFull) errors.unshift(t("The menu holds up to {max} emotes, so {n} wasn't added.|The menu holds up to {max} emotes, so {n} weren't added.", { max: P.MAX_EMOTES, n: skippedFull }));
     if (errors.length) toast(errors.join(" · "));
   }
 
@@ -4042,8 +4146,8 @@ window.EmoteStrings = {
     $("menu-classic").setAttribute("aria-pressed", String(!pixel));
     $("menu-style-help").textContent = pixel ? t("Beta: emoji tiles in a Cleverlike frame.") : t("Minecraft's standard list, with emote icons.");
   }
-  $("menu-pixel").onclick = () => { project.menuStyle = "pixel"; save(); renderMenuStyle(); };
-  $("menu-classic").onclick = () => { project.menuStyle = "classic"; save(); renderMenuStyle(); };
+  $("menu-pixel").onclick = () => { project.menuStyle = "pixel"; save(); renderMenuStyle(); renderList(); renderInspector(); paintInspectorIcons(); };
+  $("menu-classic").onclick = () => { project.menuStyle = "classic"; save(); renderMenuStyle(); renderList(); renderInspector(); paintInspectorIcons(); };
   /** Show (or clear) a name problem right under its field */
   function fieldError(input, msg) {
     input.setAttribute("aria-invalid", msg ? "true" : "false");
@@ -4105,6 +4209,13 @@ window.EmoteStrings = {
     document.querySelector(`li[data-key="${key}"] button[data-act="${act}"]`)?.focus();
   });
 
+  function longName(em) { return project.menuStyle !== "classic" && !F.checkText(em.name) && !P.fitCardLabel(em.name).fits; }
+  /** Warn when a name won't fit on one line of a pixel-menu card */
+  function fitHint(name) {
+    if (project.menuStyle === "classic" || F.checkText(name)) return "";
+    const f = P.fitCardLabel(name);
+    return f.fits ? "" : t("Too long for the menu card, so it will show as “{short}”. About 10 letters fit.", { short: f.text });
+  }
   const insp = $("inspector-body");
   insp.addEventListener("input", (e) => {
     const em = current(); if (!em) return;
@@ -4112,6 +4223,7 @@ window.EmoteStrings = {
       em.name = cleanField(e.target, false);
       em.slug = P.uniqueSlug(E.slugify(em.name), project.emotes, em);
       save(); renderList(); renderStage(); renderProblems(false);
+      const fit = $("em-name-fit"); if (fit) fit.textContent = fitHint(em.name);
       const d = insp.querySelector(".facts dd:last-child"); if (d) d.textContent = P.animIdFor(project, em);
     }
   });
